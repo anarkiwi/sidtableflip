@@ -2,7 +2,7 @@ def add_args(parser):
     parser.add_argument(
         "--reglogs",
         type=str,
-        default="/scratch/hvsc/C64Music/MUSICIANS/H/Hubbard_Rob/Comman*/*/*.dump.zst",
+        default="/scratch/hvsc/C64Music/MUSICIANS/H/Hubbard_Rob/Commando/*/*.dump.zst",
     )
     parser.add_argument("--model_state", type=str, default="/scratch/tmp/model.pth")
     parser.add_argument("--sequence-length", type=int, default=256)

@@ -26,24 +26,22 @@ def main():
     best_model = torch.load(args.single_model)[0]
     model.load_state_dict(best_model)
     model.eval()
-    rows = []
+    states = []
 
-    for i in range(2):
+    for _ in range(2):
         pattern = dataset.dfs[random.randint(0, n_chars - args.output_length) :][
             : args.output_length
         ]["n"].tolist()
+        x = torch.tensor(np.reshape(pattern, (1, len(pattern))), dtype=torch.long)
         with torch.no_grad():
-            for i in range(args.output_length):
-                x = torch.tensor(
-                    np.reshape(pattern, (1, len(pattern))), dtype=torch.long
-                )
+            for _ in range(args.output_length):
                 prediction = model(x.to(device))
-                index = int(prediction.argmax())
-                rows.append(index)
-                pattern.append(index)
-                pattern = pattern[1:]
+                state = int(prediction.argmax())
+                states.append(state)
+                x = torch.roll(x, -1, 1)
+                x[0][-1] = state
 
-    df = pd.DataFrame(rows, columns=["n"]).merge(dataset.tokens, on="n")
+    df = pd.DataFrame(states, columns=["n"]).merge(dataset.tokens, on="n", how="left")
     write_samples(df, args.wav)
 
 
