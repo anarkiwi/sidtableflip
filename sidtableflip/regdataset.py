@@ -9,10 +9,11 @@ import pandas as pd
 
 class RegDataset(torch.utils.data.Dataset):
     regwidths = {
-        3: 4,  # v1 PWM high
-        10: 4,  # v2 PWM high
-        17: 4,  # v3 PWM high,
-        21: 3,  # filter cutoff low
+        3: 2**4 - 1,  # v1 PWM high
+        10: 2**4 - 1,  # v2 PWM high
+        17: 2**4 - 4,  # v3 PWM high,
+        21: 2**3 - 1,  # filter cutoff low
+        23: ((2**8 - 1) - 2**3),  # filter ext
     }
 
     def __init__(self, args):
@@ -33,10 +34,7 @@ class RegDataset(torch.utils.data.Dataset):
     def _rightsize_regs(self, df):
         for reg, width in self.regwidths.items():
             mask = df["reg"] == reg
-            df.loc[mask, "val"] = df[mask]["val"] & 2**width
-        mask = df["reg"] == 23
-        # clear fltex
-        df.loc[mask, "val"] = df[mask]["val"] & ((2**8 - 1) - 2**3)
+            df.loc[mask, "val"] = df[mask]["val"] & width
         return df
 
     def _read_df(self, name):
