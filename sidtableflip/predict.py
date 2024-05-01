@@ -41,8 +41,7 @@ def main():
         prompt[-1][0] = state
         states.append(state)
 
-    df = pd.DataFrame(states, columns=["n"])
-    df = df.merge(dataset.tokens, on=["n"])
+    df = pd.DataFrame(states, columns=["n"]).merge(dataset.tokens, on="n", how="left")
     write_samples(df, args.wav)
 
 

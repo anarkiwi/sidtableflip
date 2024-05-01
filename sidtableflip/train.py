@@ -22,7 +22,9 @@ def main():
 
     optimizer = torch.optim.Adam(model.parameters())
     loss_f = torch.nn.CrossEntropyLoss(reduction="sum")
-    loader = torch.utils.data.DataLoader(dataset, shuffle=True, batch_size=args.batch_size)
+    loader = torch.utils.data.DataLoader(
+        dataset, shuffle=True, batch_size=args.batch_size
+    )
 
     for epoch in range(args.max_epochs):
         state_h, state_c = model.init_state(args.sequence_length)
