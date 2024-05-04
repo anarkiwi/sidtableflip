@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3.11
 
 import argparse
 import logging
@@ -16,14 +16,14 @@ def main():
     args = parser.parse_args()
 
     dataset = RegDataset(args)
-    model = Model(dataset)
+    model = torch.compile(Model(dataset))
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters())
     loss_f = torch.nn.CrossEntropyLoss(reduction="sum")
     loader = torch.utils.data.DataLoader(
-        dataset, shuffle=True, batch_size=args.batch_size
+        dataset, shuffle=True, batch_size=args.batch_size, pin_memory=True
     )
 
     for epoch in range(args.max_epochs):

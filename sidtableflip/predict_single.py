@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3.11
 
 import argparse
 import logging
@@ -18,6 +18,7 @@ def main():
     args = parser.parse_args()
     dataset = RegDatasetSingle(args)
     model = SingleModel(dataset)
+    model = torch.compile(model)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
@@ -26,12 +27,13 @@ def main():
     best_model = torch.load(args.single_model)[0]
     model.load_state_dict(best_model)
     model.eval()
-    states = []
+    states = dataset.dfs[:128]["n"].to_list()
 
     for _ in range(2):
         pattern = dataset.dfs[random.randint(0, n_chars - args.output_length) :][
             : args.output_length
-        ]["n"].tolist()
+        ]
+        pattern = pattern["n"].tolist()
         x = torch.tensor(np.reshape(pattern, (1, len(pattern))), dtype=torch.long)
         with torch.no_grad():
             for _ in range(args.output_length):

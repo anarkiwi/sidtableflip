@@ -32,14 +32,27 @@ class RegDataset(torch.utils.data.Dataset):
             },
         )
         assert df["reg"].min() >= 0
+        df = df[df["chipno"] == 0]
         df = df[["clock", "reg", "val"]]
         df["diff"] = df["clock"].diff().fillna(0).astype(np.uint64)
         df = df[["diff", "reg", "val"]]
         return df
 
-    def _downsample_df(self, df, ds={"diff": 128}):
-        for col, val in ds.items():
-            df[col] = (df[col].floordiv(val) * val).astype(np.uint32)
+    def _maskreg(self, df, reg, valmask):
+        mask = df["reg"] == reg
+        df.loc[mask, ["val"]] = df[mask]["val"] & valmask
+
+    def _downsample_df(self, df):
+        # resample diffs to 128
+        df["diff"] = (df["diff"].floordiv(128) * 128).astype(np.uint32)
+        self._maskreg(df, 23, (2**8 - 1) - 2**3)
+        # drop 4 low bits in pulse width
+        for reg in (2, 9, 16):
+            self._maskreg(df, reg, 240)
+        # 21 filter cutoff low
+        # 22 filter cutoff high
+        # 23 filter res + route
+        # 24 filter mode + vol
         return df
 
     def _load(self):

@@ -3,7 +3,7 @@ from torch import nn
 
 
 class SingleModel(nn.Module):
-    def __init__(self, dataset, embedding_dim=128, lstm_size=256, num_layers=2):
+    def __init__(self, dataset, embedding_dim=128, lstm_size=256, num_layers=3):
         super().__init__()
         self.embedding = nn.Embedding(
             num_embeddings=dataset.n_vocab,
@@ -28,7 +28,7 @@ class SingleModel(nn.Module):
 
 
 class Model(nn.Module):
-    def __init__(self, dataset, embedding_dim=128, lstm_size=256, num_layers=2):
+    def __init__(self, dataset, embedding_dim=128, lstm_size=256, num_layers=3):
         super().__init__()
         self.lstm_size = lstm_size
         self.embedding_dim = embedding_dim

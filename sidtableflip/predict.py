@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3.11
 
 import argparse
 import logging
@@ -18,7 +18,7 @@ def main():
     args = parser.parse_args()
 
     dataset = RegDataset(args)
-    model = Model(dataset)
+    model = torch.compile(Model(dataset))
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
     best_model = torch.load(args.model_state)[0]
@@ -30,7 +30,6 @@ def main():
         : args.sequence_length
     ].unsqueeze(1)
     states = []
-
     for _ in range(args.output_length):
         y_pred, (state_h, state_c) = model(
             prompt.to(device), (state_h.to(device), state_c.to(device))
@@ -42,6 +41,7 @@ def main():
         states.append(state)
 
     df = pd.DataFrame(states, columns=["n"]).merge(dataset.tokens, on="n", how="left")
+    df["diff"] += 256
     write_samples(df, args.wav)
 
 
