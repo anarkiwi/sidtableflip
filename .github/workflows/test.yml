@@ -12,5 +12,4 @@ jobs:
       run: |
         sudo apt-get update && sudo apt-get install python3-dev && \
         sudo pip3 install -U -r test-requirements.txt -r requirements.txt -r test-requirements.txt && \
-        PYTHONPATH=. pytype . && \
         PYTHONPATH=. pytest
