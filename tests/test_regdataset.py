@@ -30,6 +30,16 @@ class TestRegDatasetLoader(unittest.TestCase):
             args = FakeArgs(test_log_name, 2)
             loader = RegDataset(args)
             results = [(i.tolist(), j.tolist()) for i, j in loader]
-            self.assertEqual([([0, 1], [1, 2]), ([1, 2], [2, 3]), ([2, 3], [3, 2]), ([3, 2], [2, 1])], results)
+            self.assertEqual(
+                [
+                    ([0, 1], [1, 2]),
+                    ([1, 2], [2, 3]),
+                    ([2, 3], [3, 2]),
+                    ([3, 2], [2, 1]),
+                ],
+                results,
+            )
             tokens = [tuple(x) for x in loader.tokens.values]
-            self.assertEqual([(0, 2, 3, 0), (0, 5, 6, 1), (0, 8, 9, 2), (0, 11, 12, 3)], tokens)
+            self.assertEqual(
+                [(0, 2, 3, 0), (0, 5, 6, 1), (0, 8, 9, 2), (0, 11, 12, 3)], tokens
+            )
