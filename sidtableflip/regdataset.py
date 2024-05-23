@@ -64,20 +64,7 @@ class RegDataset(torch.utils.data.Dataset):
         return len(self.dfs) - self.args.sequence_length
 
     def __getitem__(self, index):
-        def slice(n):
+        def slice_items(n):
             return self.dfs_n[n : n + self.args.sequence_length]
 
-        return (slice(index), slice(index + 1))
-
-
-class RegDatasetSingle(RegDataset):
-    def __len__(self):
-        return (
-            int(len(self.dfs) / self.args.sequence_length) - 1
-        ) * self.args.sequence_length
-
-    def __getitem__(self, index):
-        def slice(n):
-            return self.dfs_n[n : n + self.args.sequence_length]
-
-        return (slice(index), self.dfs_n[index + self.args.sequence_length + 1])
+        return (slice_items(index), slice_items(index + 1))

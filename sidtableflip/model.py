@@ -2,31 +2,6 @@ import torch
 from torch import nn
 
 
-class SingleModel(nn.Module):
-    def __init__(self, dataset, embedding_dim=128, lstm_size=256, num_layers=2):
-        super().__init__()
-        self.embedding = nn.Embedding(
-            num_embeddings=dataset.n_vocab,
-            embedding_dim=embedding_dim,
-        )
-        self.lstm = nn.LSTM(
-            input_size=embedding_dim,
-            hidden_size=lstm_size,
-            num_layers=num_layers,
-            batch_first=True,
-            dropout=0.2,
-        )
-        self.dropout = nn.Dropout(0.2)
-        self.linear = nn.Linear(lstm_size, dataset.n_vocab)
-
-    def forward(self, x):
-        embed = self.embedding(x)
-        x, _ = self.lstm(embed)
-        x = x[:, -1, :]
-        x = self.linear(self.dropout(x))
-        return x
-
-
 class Model(nn.Module):
     def __init__(self, dataset, embedding_dim=128, lstm_size=256, num_layers=2):
         super().__init__()

@@ -10,7 +10,4 @@ def add_args(parser):
     parser.add_argument("--batch-size", type=int, default=512)
     parser.add_argument("--wav", type=str, default="/scratch/tmp/x.wav")
     parser.add_argument("--output_length", type=int, default=10000)
-    parser.add_argument(
-        "--single_model", type=str, default="/scratch/tmp/single-char.pth"
-    )
     return parser
