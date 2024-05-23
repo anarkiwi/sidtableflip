@@ -64,6 +64,8 @@ class RegDataset(torch.utils.data.Dataset):
         return len(self.dfs) - self.args.sequence_length
 
     def __getitem__(self, index):
+        if index >= len(self):
+            raise IndexError
         def slice_items(n):
             return self.dfs_n[n : n + self.args.sequence_length]
 
