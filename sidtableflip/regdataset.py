@@ -71,3 +71,9 @@ class RegDataset(torch.utils.data.Dataset):
             return self.dfs_n[n : n + self.args.sequence_length]
 
         return (slice_items(index), slice_items(index + 1))
+
+
+def get_loader(args, dataset):
+    return torch.utils.data.DataLoader(
+        dataset, shuffle=args.shuffle, batch_size=args.batch_size, pin_memory=True
+    )
