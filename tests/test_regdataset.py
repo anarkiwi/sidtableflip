@@ -43,5 +43,5 @@ class TestRegDatasetLoader(unittest.TestCase):
             )
             tokens = [tuple([int(i) for i in x]) for x in loader.tokens.values]
             self.assertEqual(
-                [(1, 2, 3, 0), (1, 5, 6, 1), (1, 8, 9, 2), (1, 11, 12, 3)], tokens
+                [(64, 2, 3, 0), (64, 5, 6, 1), (64, 8, 9, 2), (64, 11, 12, 3)], tokens
             )
