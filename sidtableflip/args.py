@@ -13,4 +13,5 @@ def add_args(parser):
     parser.add_argument("--shuffle", type=bool, default=True)
     parser.add_argument("--max_files", type=int, default=50)
     parser.add_argument("--diffq", type=int, default=128)
+    parser.add_argument("--learning-rate", type=float, 0.001)
     return parser

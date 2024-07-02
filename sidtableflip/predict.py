@@ -13,6 +13,7 @@ from model import TransformerModel
 from sidwav import write_samples
 
 
+# TODO: add variation rather than most probable
 def sample_next(predictions):
     probabilities = F.softmax(predictions[:, -1, :], dim=-1).cpu()
     next_token = torch.argmax(probabilities)
@@ -33,13 +34,13 @@ def main():
     model.load_state_dict(best_model)
     model.eval()
 
+    # TODO: CLI prompt input.
     n = len(dataset.dfs_n)
     random.seed(time.time())
     start = random.randint(0, n)
     prompt = dataset.dfs_n[start:][: args.sequence_length].unsqueeze(0)
     # states = dataset.dfs_n[:args.sequence_length].tolist()
     states = dataset.dfs_n[:100].tolist()
-    print("start", start)
 
     for _ in range(args.output_length):
         prompt = prompt.to(device)

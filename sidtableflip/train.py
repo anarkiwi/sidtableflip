@@ -19,12 +19,11 @@ def main():
     dataset = RegDataset(args)
     dataloader = get_loader(args, dataset)
 
-    learning_rate = 0.001
     model = TransformerModel(dataset, sequence_length=args.sequence_length)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 
     model.train()
     for epoch in range(args.max_epochs):
