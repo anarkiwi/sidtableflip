@@ -3,10 +3,11 @@
 import argparse
 import logging
 import torch
-import numpy as np
-from regdataset import RegDataset
+import torch.nn as nn
+import torch.optim as optim
+from regdataset import RegDataset, get_loader
 from args import add_args
-from model import Model
+from model import TransformerModel
 
 
 def main():
@@ -16,33 +17,35 @@ def main():
     args = parser.parse_args()
 
     dataset = RegDataset(args)
-    model = Model(dataset)
+    dataloader = get_loader(args, dataset)
+
+    learning_rate = 0.001
+    model = TransformerModel(dataset, sequence_length=args.sequence_length)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-    optimizer = torch.optim.Adam(model.parameters())
-    loss_f = torch.nn.CrossEntropyLoss(reduction="sum")
-    loader = torch.utils.data.DataLoader(
-        dataset, shuffle=True, batch_size=args.batch_size
-    )
-
+    model.train()
     for epoch in range(args.max_epochs):
-        state_h, state_c = model.init_state(args.sequence_length)
-        model.train()
-        for batch, (x, y) in enumerate(loader):
+        running_loss = 0
+        for batch, input_seq_target_seq in enumerate(dataloader):
+            input_seq, target_seq = input_seq_target_seq
+            input_seq, target_seq = input_seq.to(device), target_seq.to(device)
+            outputs = model(input_seq)
+            target_seq = target_seq.contiguous().view(-1)
+            outputs = outputs.view(-1, dataset.n_vocab)
+            loss = criterion(outputs, target_seq.view(-1))
             optimizer.zero_grad()
-            y_pred, (state_h, state_c) = model(
-                x.to(device), (state_h.to(device), state_c.to(device))
-            )
-            loss = loss_f(y_pred.transpose(1, 2), y.to(device))
-            state_h = state_h.detach()
-            state_c = state_c.detach()
             loss.backward()
             optimizer.step()
             progress = (batch * args.batch_size) / dataset.n_words * 100
             logging.info(
                 f"epoch {epoch} batch {batch} ({progress: .2f}%): loss: {loss.item(): .2f}"
             )
+            running_loss += loss.detach().cpu().numpy()
+        epoch_loss = running_loss / len(dataloader)
+        logging.info(f"Epoch {epoch} loss: {epoch_loss:.3f}")
 
     best_model = model.state_dict()
     torch.save([best_model], args.model_state)

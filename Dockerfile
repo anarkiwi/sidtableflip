@@ -7,4 +7,4 @@ WORKDIR /
 RUN PYTHONPATH=. pytest /tests
 
 # docker build -f Dockerfile . -t anarkiwi/sidtableflip
-# docker run --gpus=all -v /scratch:/scratch -ti anarkiwi/sidtableflip /sidtableflip/train.py --batch-size 32
+# docker run --gpus=all -v /scratch:/scratch -ti anarkiwi/sidtableflip /sidtableflip/train.py --batch-size 64
