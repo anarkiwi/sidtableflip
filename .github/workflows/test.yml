@@ -10,6 +10,4 @@ jobs:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
     - name: test
       run: |
-        sudo apt-get update && sudo apt-get install python3-dev && \
-        sudo pip3 install -U -r test-requirements.txt -r requirements.txt -r test-requirements.txt && \
-        PYTHONPATH=. pytest
+        docker build -f Dockerfile . -t anarkiwi/sidtableflip

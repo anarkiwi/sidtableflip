@@ -1,5 +1,5 @@
-torch
-numpy
-pandas
-pyresidfp
-scipy
+torch==2.3.1
+numpy==2.0.0
+pandas==2.2.2
+pyresidfp==0.11.0
+scipy==1.14.0
