@@ -12,4 +12,5 @@ def add_args(parser):
     parser.add_argument("--output_length", type=int, default=10000)
     parser.add_argument("--shuffle", type=bool, default=True)
     parser.add_argument("--max_files", type=int, default=50)
+    parser.add_argument("--diffq", type=int, default=128)
     return parser

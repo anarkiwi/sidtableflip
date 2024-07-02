@@ -10,7 +10,8 @@ class FakeArgs:
     def __init__(self, reglogs, sequence_length):
         self.reglogs = reglogs
         self.sequence_length = sequence_length
-        self.max_files = 50
+        self.max_files = 1
+        self.diffq = 64
 
 
 class TestRegDatasetLoader(unittest.TestCase):

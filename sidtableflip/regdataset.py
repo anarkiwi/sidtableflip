@@ -47,8 +47,9 @@ class RegDataset(torch.utils.data.Dataset):
         self._maskreg(df, reg, 255 - (2**bits - 1))
 
     def _downsample_df(self, df):
-        # resample diffs to 128
-        df["diff"] = (df["diff"].floordiv(64) * 64).astype(np.uint32) + 1
+        df["diff"] = (
+            df["diff"].floordiv(self.args.diffq).clip(lower=1) * self.args.diffq
+        ).astype(np.uint32)
         # 21 filter cutoff low
         # 22 filter cutoff high
         # 23 filter res + route
