@@ -3,12 +3,20 @@
 import argparse
 import logging
 import random
+import time
 import torch
 import pandas as pd
 from regdataset import RegDataset
+import torch.nn.functional as F
 from args import add_args
-from model import Model
+from model import TransformerModel
 from sidwav import write_samples
+
+
+def sample_next(predictions):
+    probabilities = F.softmax(predictions[:, -1, :], dim=-1).cpu()
+    next_token = torch.argmax(probabilities)
+    return int(next_token.cpu())
 
 
 def main():
@@ -18,27 +26,31 @@ def main():
     args = parser.parse_args()
 
     dataset = RegDataset(args)
-    model = Model(dataset)
+    model = TransformerModel(dataset, sequence_length=args.sequence_length)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
     best_model = torch.load(args.model_state)[0]
     model.load_state_dict(best_model)
     model.eval()
 
-    state_h, state_c = model.init_state(1)
-    prompt = dataset.dfs_n[random.randint(0, len(dataset.dfs_n)) :][
-        : args.sequence_length
-    ].unsqueeze(1)
-    states = []
+    n = len(dataset.dfs_n)
+    random.seed(time.time())
+    start = random.randint(0, n)
+    prompt = dataset.dfs_n[start:][: args.sequence_length].unsqueeze(0)
+    # states = dataset.dfs_n[:args.sequence_length].tolist()
+    states = dataset.dfs_n[:100].tolist()
+    print("start", start)
 
     for _ in range(args.output_length):
-        y_pred, (state_h, state_c) = model(
-            prompt.to(device), (state_h.to(device), state_c.to(device))
-        )
-        last_word_logits = y_pred[0][-1]
-        prompt = torch.roll(prompt, -1)
-        state = int(last_word_logits.argmax())
-        prompt[-1][0] = state
+        prompt = prompt.to(device)
+        with torch.no_grad():
+            predictions = model(prompt)
+        prompt = prompt.to("cpu")
+        # prompt = torch.roll(prompt.to("cpu"), -1)
+        state = sample_next(predictions)
+        z = prompt.squeeze(0).tolist() + [state]
+        prompt = torch.tensor(z[-args.sequence_length :]).unsqueeze(0)
+        # prompt[-1][0] = state
         states.append(state)
 
     df = pd.DataFrame(states, columns=["n"]).merge(dataset.tokens, on="n", how="left")

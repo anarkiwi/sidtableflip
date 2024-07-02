@@ -2,6 +2,7 @@
 
 import logging
 import glob
+import random
 import torch
 import numpy as np
 import pandas as pd
@@ -32,21 +33,37 @@ class RegDataset(torch.utils.data.Dataset):
             },
         )
         assert df["reg"].min() >= 0
+        df = df[df["chipno"] == 0]
         df = df[["clock", "reg", "val"]]
         df["diff"] = df["clock"].diff().fillna(0).astype(np.uint64)
         df = df[["diff", "reg", "val"]]
         return df
 
-    def _downsample_df(self, df, ds={"diff": 128}):
-        for col, val in ds.items():
-            df[col] = (df[col].floordiv(val) * val).astype(np.uint32)
+    def _maskreg(self, df, reg, valmask):
+        mask = df["reg"] == reg
+        df.loc[mask, ["val"]] = df[mask]["val"] & valmask
+
+    def _maskregbits(self, df, reg, bits):
+        self._maskreg(df, reg, 255 - (2**bits - 1))
+
+    def _downsample_df(self, df):
+        # resample diffs to 128
+        df["diff"] = (df["diff"].floordiv(64) * 64).astype(np.uint32) + 1
+        # 21 filter cutoff low
+        # 22 filter cutoff high
+        # 23 filter res + route
+        # 24 filter mode + vol
         return df
 
     def _load(self):
-        self.dfs = [
-            self._downsample_df(self._read_df(name))
-            for name in sorted(glob.glob(self.args.reglogs))
-        ]
+        random.seed(0)
+        globbed = list(glob.glob(self.args.reglogs))
+        files = []
+        while len(files) < self.args.max_files and globbed:
+            file = random.choice(globbed)
+            files.append(file)
+            globbed.remove(file)
+        self.dfs = [self._downsample_df(self._read_df(name)) for name in sorted(files)]
         self.tokens = (
             pd.concat(self.dfs).drop_duplicates().sort_values(["reg", "val", "diff"])
         )
@@ -58,7 +75,7 @@ class RegDataset(torch.utils.data.Dataset):
                 for df in self.dfs
             ]
         )
-        self.dfs_n = torch.tensor(self.dfs["n"].values, dtype=torch.long)
+        self.dfs_n = torch.LongTensor(self.dfs["n"].values)
 
     def __len__(self):
         return len(self.dfs) - self.args.sequence_length
@@ -67,10 +84,10 @@ class RegDataset(torch.utils.data.Dataset):
         if index >= len(self):
             raise IndexError
 
-        def slice_items(n):
+        def slice_n(n):
             return self.dfs_n[n : n + self.args.sequence_length]
 
-        return (slice_items(index), slice_items(index + 1))
+        return (slice_n(index), slice_n(index + 1))
 
 
 def get_loader(args, dataset):

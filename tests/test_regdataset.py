@@ -10,6 +10,7 @@ class FakeArgs:
     def __init__(self, reglogs, sequence_length):
         self.reglogs = reglogs
         self.sequence_length = sequence_length
+        self.max_files = 50
 
 
 class TestRegDatasetLoader(unittest.TestCase):
@@ -39,7 +40,7 @@ class TestRegDatasetLoader(unittest.TestCase):
                 ],
                 results,
             )
-            tokens = [tuple(x) for x in loader.tokens.values]
+            tokens = [tuple([int(i) for i in x]) for x in loader.tokens.values]
             self.assertEqual(
-                [(0, 2, 3, 0), (0, 5, 6, 1), (0, 8, 9, 2), (0, 11, 12, 3)], tokens
+                [(1, 2, 3, 0), (1, 5, 6, 1), (1, 8, 9, 2), (1, 11, 12, 3)], tokens
             )
