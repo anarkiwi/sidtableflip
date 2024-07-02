@@ -1,2 +1,2 @@
-pytype
-pytest
+pytype==2024.04.11
+pytest==8.2.2
