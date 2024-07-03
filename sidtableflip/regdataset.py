@@ -59,9 +59,16 @@ class RegDataset(torch.utils.data.Dataset):
         # 23 filter res + route
         # 24 filter mode + vol
         df["diff"] = df["clock"].diff().fillna(0).astype(np.uint64)
-        df["diff"] = (
-            df["diff"].floordiv(self.args.diffq).clip(lower=1) * self.args.diffq
-        ).astype(np.uint32)
+
+        def _downsample_diff(df_diff, diffq):
+            return (df_diff["diff"].floordiv(diffq).clip(lower=1) * diffq).astype(
+                np.uint32
+            )
+
+        df["diff"] = _downsample_diff(df, self.args.diffq)
+        diffq = self.args.diffq**2
+        mask = df["diff"] >= diffq
+        df.loc[mask, ["diff"]] = _downsample_diff(df, diffq)
         df = df[["diff", "reg", "val"]]
         return df
 
