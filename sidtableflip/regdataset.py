@@ -33,10 +33,9 @@ class RegDataset(torch.utils.data.Dataset):
             },
         )
         assert df["reg"].min() >= 0
+        # keep only chipno 0
         df = df[df["chipno"] == 0]
         df = df[["clock", "reg", "val"]]
-        df["diff"] = df["clock"].diff().fillna(0).astype(np.uint64)
-        df = df[["diff", "reg", "val"]]
         return df
 
     def _maskreg(self, df, reg, valmask):
@@ -47,13 +46,23 @@ class RegDataset(torch.utils.data.Dataset):
         self._maskreg(df, reg, 255 - (2**bits - 1))
 
     def _downsample_df(self, df):
-        df["diff"] = (
-            df["diff"].floordiv(self.args.diffq).clip(lower=1) * self.args.diffq
-        ).astype(np.uint32)
+        for v in range(3):
+            v_offset = v * 7
+            # keep high 4 bits, of PCM low
+            self._maskreg(df, 2 + v_offset, 240)
+            # keep high 7 bits of freq low
+            self._maskreg(df, v_offset, 254)
+        # discard low 4 bits of filter cutoff.
+        df = df[df["reg"] != 21].copy()
         # 21 filter cutoff low
         # 22 filter cutoff high
         # 23 filter res + route
         # 24 filter mode + vol
+        df["diff"] = df["clock"].diff().fillna(0).astype(np.uint64)
+        df["diff"] = (
+            df["diff"].floordiv(self.args.diffq).clip(lower=1) * self.args.diffq
+        ).astype(np.uint32)
+        df = df[["diff", "reg", "val"]]
         return df
 
     def _load(self):
