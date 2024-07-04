@@ -55,18 +55,16 @@ class RegDataset(torch.utils.data.Dataset):
         ]
         return reg_df.join(df)[["clock", "reg", "val"]].reset_index(drop=True)
 
+    def _downsample_diff(self, df_diff, diffq):
+        return (df_diff["diff"].floordiv(diffq).clip(lower=1) * diffq).astype(np.uint32)
+
     def _quantize_diff(self, df):
         df["diff"] = df["clock"].diff().fillna(0).astype(np.uint64)
 
-        def _downsample_diff(df_diff, diffq):
-            return (df_diff["diff"].floordiv(diffq).clip(lower=1) * diffq).astype(
-                np.uint32
-            )
-
         diffq = self.args.diffq**2
         mask = df["diff"] > diffq
-        df.loc[mask, ["diff"]] = _downsample_diff(df, diffq)
-        df["diff"] = _downsample_diff(df, self.args.diffq)
+        df.loc[mask, ["diff"]] = self._downsample_diff(df, diffq)
+        df["diff"] = self._downsample_diff(df, self.args.diffq)
         df = df[["diff", "reg", "val"]]
         return df
 
@@ -111,14 +109,14 @@ class RegDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.dfs) - self.args.sequence_length
 
+    def slice_n(self, n):
+        return self.dfs_n[n : n + self.args.sequence_length]
+
     def __getitem__(self, index):
         if index >= len(self):
             raise IndexError
 
-        def slice_n(n):
-            return self.dfs_n[n : n + self.args.sequence_length]
-
-        return (slice_n(index), slice_n(index + 1))
+        return (self.slice_n(index), self.slice_n(index + 1))
 
 
 def get_loader(args, dataset):

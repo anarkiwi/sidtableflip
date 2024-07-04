@@ -2,8 +2,8 @@ def add_args(parser):
     parser.add_argument(
         "--reglogs",
         type=str,
-        # default="/scratch/hvsc/C64Music/MUSICIANS/H/Hubbard_Rob/*/*/*-1.dump.zst",
-        default="/scratch/hvsc/C64Music/MUSICIANS/J/Jammer/Grid_Runner/1/Grid_Runner-1.dump.zst",
+        default="/scratch/hvsc/C64Music/MUSICIANS/H/Hubbard_Rob/*/*/*-1.dump.zst",
+        # default="/scratch/hvsc/C64Music/MUSICIANS/J/Jammer/Grid_Runner/1/Grid_Runner-1.dump.zst",
     )
     parser.add_argument("--model_state", type=str, default="/scratch/tmp/model.pth")
     parser.add_argument("--sequence-length", type=int, default=2048)
@@ -12,7 +12,7 @@ def add_args(parser):
     parser.add_argument("--wav", type=str, default="/scratch/tmp/sidtableflip.wav")
     parser.add_argument("--output_length", type=int, default=10000)
     parser.add_argument("--shuffle", type=bool, default=True)
-    parser.add_argument("--max_files", type=int, default=128)
+    parser.add_argument("--max-files", type=int, default=128)
     parser.add_argument("--diffq", type=int, default=64)
     parser.add_argument("--learning-rate", type=float, default=0.001)
     return parser
