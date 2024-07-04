@@ -22,6 +22,7 @@ def sample_next(predictions):
 
 def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
+    torch.set_float32_matmul_precision("high")
 
     parser = add_args(argparse.ArgumentParser())
     args = parser.parse_args()

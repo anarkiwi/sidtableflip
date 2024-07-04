@@ -25,7 +25,7 @@ def main():
     model = torch.compile(
         TransformerModel(dataset, sequence_length=args.sequence_length)
     ).to(device)
-    optimizer = optim.SGD(model.parameters(), lr=args.learning_rate, momentum=0.9)
+    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     criterion = nn.CrossEntropyLoss()
 
     model.train()
