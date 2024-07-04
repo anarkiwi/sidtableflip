@@ -41,19 +41,15 @@ def main():
     random.seed(time.time())
     start = random.randint(0, n)
     prompt = dataset.dfs_n[start:][: args.sequence_length].unsqueeze(0)
-    # states = dataset.dfs_n[:args.sequence_length].tolist()
-    states = dataset.dfs_n[:100].tolist()
+    states = []
 
     for _ in range(args.output_length):
         prompt = prompt.to(device)
         with torch.no_grad():
             predictions = model(prompt)
-        prompt = prompt.to("cpu")
-        # prompt = torch.roll(prompt.to("cpu"), -1)
+        prompt = torch.roll(prompt.to("cpu"), -1)
         state = sample_next(predictions)
-        z = prompt.squeeze(0).tolist() + [state]
-        prompt = torch.tensor(z[-args.sequence_length :]).unsqueeze(0)
-        # prompt[-1][0] = state
+        prompt[-1][0] = state
         states.append(state)
 
     df = pd.DataFrame(states, columns=["n"]).merge(dataset.tokens, on="n", how="left")

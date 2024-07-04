@@ -7,7 +7,14 @@ import numpy as np
 def write_samples(df, name, diffpad=8):
     sid = SoundInterfaceDevice()
     df["secs"] = (df["diff"] + diffpad) * (sid.clock_frequency / 1e6) / 1e6
+    # max vol
     sid.write_register(24, 15)
+    for v in range(3):
+        offset = v * 7
+        # max sustain all voices
+        sid.write_register(4 + offset, 240)
+        # 50% pwm
+        sid.write_register(3 + offset, 16)
     raw_samples = []
     for row in df.itertuples():
         raw_samples.extend(sid.clock(timedelta(seconds=row.secs)))
