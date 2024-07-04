@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -26,6 +27,7 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 
     model.train()
+    last_log = None
     for epoch in range(args.max_epochs):
         running_loss = 0
         for batch, input_seq_target_seq in enumerate(dataloader):
@@ -38,10 +40,13 @@ def main():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            progress = (batch * args.batch_size) / dataset.n_words * 100
-            logging.info(
-                f"epoch {epoch} batch {batch} ({progress: .2f}%): loss: {loss.item(): .2f}"
-            )
+            now = time.time()
+            if last_log is None or now - last_log > 10:
+                progress = (batch * args.batch_size) / dataset.n_words * 100
+                last_log = now
+                logging.info(
+                    f"epoch {epoch} batch {batch} ({progress: .2f}%): loss: {loss.item(): .2f}"
+                )
             running_loss += loss.detach().cpu().numpy()
         epoch_loss = running_loss / len(dataloader)
         logging.info(f"Epoch {epoch} loss: {epoch_loss:.3f}")
