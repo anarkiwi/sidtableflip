@@ -23,7 +23,7 @@ def main():
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = torch.compile(
-        TransformerModel(dataset, sequence_length=args.sequence_length)
+        TransformerModel(dataset, device, sequence_length=args.sequence_length)
     ).to(device)
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     criterion = nn.CrossEntropyLoss()

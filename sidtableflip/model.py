@@ -56,6 +56,7 @@ class TransformerModel(nn.Transformer):
     def __init__(
         self,
         dataset,
+        device,
         embed_dim=128,
         num_layers=2,
         num_heads=2,
@@ -77,6 +78,7 @@ class TransformerModel(nn.Transformer):
             custom_encoder=None,
             custom_decoder=decoder,
             batch_first=True,
+            device=device,
         )
         vocab_size = dataset.n_vocab
         self.pos_encoder = PositionalEncoding(
@@ -85,12 +87,12 @@ class TransformerModel(nn.Transformer):
         self.emb = nn.Embedding(vocab_size, embed_dim)
         self.linear = nn.Linear(embed_dim, vocab_size)
         self.dropout = nn.Dropout(dropout)
+        self.mask = self.generate_square_subsequent_mask(sequence_length, device)
 
     def forward(self, x):
         emb = self.emb(x)
-        mask = self.generate_square_subsequent_mask(x.size(1), x.device)
         x = self.pos_encoder(emb)
-        x = self.decoder(x, memory=x, tgt_mask=mask, memory_mask=mask)
+        x = self.decoder(x, memory=x, tgt_mask=self.mask, memory_mask=self.mask)
         x = self.dropout(x)
         out = self.linear(x)
         return out
