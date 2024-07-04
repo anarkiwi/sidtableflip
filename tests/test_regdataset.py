@@ -1,6 +1,8 @@
 import os
 import tempfile
 import unittest
+import numpy as np
+import pandas as pd
 import torch
 
 from sidtableflip.regdataset import RegDataset
@@ -23,25 +25,54 @@ class TestRegDatasetLoader(unittest.TestCase):
                 (4, 0, 5, 6),
                 (7, 0, 8, 9),
                 (10, 0, 11, 12),
-                (7, 0, 8, 9),
-                (4, 0, 5, 6),
+                (7, 0, 13, 14),
             ]
             with open(test_log_name, "w") as log:
                 for reg_tuple in regdata:
                     log.write(" ".join([str(x) for x in reg_tuple]) + "\n")
             args = FakeArgs(test_log_name, 2)
             loader = RegDataset(args)
+
+            test_df = pd.DataFrame(
+                [
+                    {"clock": 1, "reg": 1, "val": 1},
+                    {"clock": 2, "reg": 2, "val": 2},
+                    {"clock": 3, "reg": 1, "val": 1},  # dropped as no-op
+                    {"clock": 8192 + 2, "reg": 1, "val": 2},
+                ],
+                dtype=np.uint32,
+            )
+            squeeze_df = loader._squeeze_changes(test_df)
+            compare_df = pd.DataFrame(
+                [
+                    {"clock": 1, "reg": 1, "val": 1},
+                    {"clock": 2, "reg": 2, "val": 2},
+                    {"clock": 8192 + 2, "reg": 1, "val": 2},
+                ],
+                dtype=np.uint32,
+            )
+            self.assertTrue(compare_df.equals(squeeze_df), (compare_df, squeeze_df))
+
+            compare_df = pd.DataFrame(
+                [
+                    {"diff": 64, "reg": 1, "val": 1},
+                    {"diff": 64, "reg": 2, "val": 2},
+                    {"diff": 8192, "reg": 1, "val": 2},
+                ],
+                dtype=np.uint32,
+            )
+            quantize_df = loader._quantize_diff(squeeze_df)
+            self.assertTrue(compare_df.equals(quantize_df), quantize_df)
+
             results = [(i.tolist(), j.tolist()) for i, j in loader]
             self.assertEqual(
                 [
                     ([0, 1], [1, 2]),
                     ([1, 2], [2, 3]),
-                    ([2, 3], [3, 2]),
-                    ([3, 2], [2, 1]),
                 ],
                 results,
             )
             tokens = [tuple([int(i) for i in x]) for x in loader.tokens.values]
             self.assertEqual(
-                [(64, 2, 0, 0), (64, 5, 6, 1), (64, 8, 9, 2), (64, 11, 12, 3)], tokens
+                [(64, 5, 6, 0), (64, 8, 9, 1), (64, 11, 12, 2), (64, 13, 14, 3)], tokens
             )

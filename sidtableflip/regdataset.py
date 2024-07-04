@@ -45,19 +45,17 @@ class RegDataset(torch.utils.data.Dataset):
     def _maskregbits(self, df, reg, bits):
         self._maskreg(df, reg, 255 - (2**bits - 1))
 
-    def _downsample_df(self, df):
-        for v in range(3):
-            v_offset = v * 7
-            # keep high 4 bits, of PCM low
-            self._maskreg(df, 2 + v_offset, 240)
-            # keep high 7 bits of freq low
-            self._maskreg(df, v_offset, 254)
-        # discard low 4 bits of filter cutoff.
-        df = df[df["reg"] != 21].copy()
-        # 21 filter cutoff low
-        # 22 filter cutoff high
-        # 23 filter res + route
-        # 24 filter mode + vol
+    def _squeeze_changes(self, df):
+        diff_cols = df.reg.unique()
+        reg_df = (
+            df.pivot(columns="reg", values="val").ffill().fillna(0).astype(np.uint8)
+        )
+        reg_df = reg_df.loc[
+            (reg_df[diff_cols].shift(fill_value=0) != reg_df[diff_cols]).any(axis=1)
+        ]
+        return reg_df.join(df)[["clock", "reg", "val"]].reset_index(drop=True)
+
+    def _quantize_diff(self, df):
         df["diff"] = df["clock"].diff().fillna(0).astype(np.uint64)
 
         def _downsample_diff(df_diff, diffq):
@@ -65,11 +63,27 @@ class RegDataset(torch.utils.data.Dataset):
                 np.uint32
             )
 
-        df["diff"] = _downsample_diff(df, self.args.diffq)
         diffq = self.args.diffq**2
-        mask = df["diff"] >= diffq
+        mask = df["diff"] > diffq
         df.loc[mask, ["diff"]] = _downsample_diff(df, diffq)
+        df["diff"] = _downsample_diff(df, self.args.diffq)
         df = df[["diff", "reg", "val"]]
+        return df
+
+    def _downsample_df(self, df):
+        for v in range(3):
+            v_offset = v * 7
+            # keep high 4 bits, of PCM low
+            self._maskreg(df, 2 + v_offset, 240)
+        # discard low 4 bits of filter cutoff.
+        df = df[df["reg"] != 21].copy()
+        # 21 filter cutoff low
+        # 22 filter cutoff high
+        # 23 filter res + route
+        # 24 filter mode + vol
+
+        df = self._squeeze_changes(df)
+        df = self._quantize_diff(df)
         return df
 
     def _load(self):
