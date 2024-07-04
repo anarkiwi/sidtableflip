@@ -27,9 +27,10 @@ def main():
     args = parser.parse_args()
 
     dataset = RegDataset(args)
-    model = TransformerModel(dataset, sequence_length=args.sequence_length)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model.to(device)
+    model = torch.compile(
+        TransformerModel(dataset, sequence_length=args.sequence_length)
+    ).to(device)
     best_model = torch.load(args.model_state)[0]
     model.load_state_dict(best_model)
     model.eval()

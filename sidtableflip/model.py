@@ -3,20 +3,6 @@ import torch
 from torch import nn
 
 
-def generate_square_subsequent_mask(sz: int):
-    """
-    Generate a square mask for the sequence. The masked positions are filled with float('-inf').
-    Unmasked positions are filled with float(0.0).
-    """
-    mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
-    mask = (
-        mask.float()
-        .masked_fill(mask == 0, float("-inf"))
-        .masked_fill(mask == 1, float(0.0))
-    )
-    return mask
-
-
 class PositionalEncoding(nn.Module):
     def __init__(self, max_len, d_model, dropout=0.1):
         super().__init__()
@@ -56,13 +42,23 @@ class TransformerModel(nn.Module):
         self.linear = nn.Linear(embed_dim, vocab_size)
         self.dropout = nn.Dropout(0.2)
 
+    def generate_square_subsequent_mask(self, sz: int):
+        """
+        Generate a square mask for the sequence. The masked positions are filled with float('-inf').
+        Unmasked positions are filled with float(0.0).
+        """
+        mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
+        mask = (
+            mask.float()
+            .masked_fill(mask == 0, float("-inf"))
+            .masked_fill(mask == 1, float(0.0))
+        )
+        return mask
+
     def forward(self, x):
         emb = self.emb(x)
 
-        # Generate input sequence mask with shape (SEQUENCE_LENGTH, SEQUENCE_LENGTH)
-        sz = x.size(1)
-        input_mask = generate_square_subsequent_mask(sz).to(x.device)
-
+        input_mask = self.generate_square_subsequent_mask(x.size(1)).to(x.device)
         x = self.pos_encoder(emb)
         x = self.decoder(x, memory=x, tgt_mask=input_mask, memory_mask=input_mask)
         x = self.dropout(x)

@@ -13,6 +13,7 @@ from model import TransformerModel
 
 def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
+    torch.set_float32_matmul_precision("high")
 
     parser = add_args(argparse.ArgumentParser())
     args = parser.parse_args()
@@ -21,11 +22,11 @@ def main():
     dataloader = get_loader(args, dataset)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = torch.jit.script(
+    model = torch.compile(
         TransformerModel(dataset, sequence_length=args.sequence_length)
     ).to(device)
-    criterion = torch.jit.script(nn.CrossEntropyLoss())
-    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+    optimizer = optim.SGD(model.parameters(), lr=args.learning_rate, momentum=0.9)
+    criterion = nn.CrossEntropyLoss()
 
     model.train()
     last_log = None
@@ -38,9 +39,9 @@ def main():
             target_seq = target_seq.contiguous().view(-1)
             outputs = outputs.view(-1, dataset.n_vocab)
             loss = criterion(outputs, target_seq.view(-1))
-            optimizer.zero_grad()
-            loss.backward()
+            loss.sum().backward()
             optimizer.step()
+            optimizer.zero_grad()
             now = time.time()
             if last_log is None or now - last_log > 10:
                 progress = (batch * args.batch_size) / dataset.n_words * 100
