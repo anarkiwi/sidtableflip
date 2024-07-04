@@ -39,7 +39,7 @@ def main():
             target_seq = target_seq.contiguous().view(-1)
             outputs = outputs.view(-1, dataset.n_vocab)
             loss = criterion(outputs, target_seq.view(-1))
-            loss.sum().backward()
+            loss.backward()
             optimizer.step()
             optimizer.zero_grad()
             now = time.time()
