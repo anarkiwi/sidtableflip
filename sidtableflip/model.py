@@ -63,36 +63,31 @@ class TransformerModel(nn.Transformer):
         sequence_length=128,
         dropout=0.2,
     ):
-        decoder_layer = nn.TransformerDecoderLayer(
-            d_model=embed_dim, nhead=num_heads, batch_first=True
-        )
-        decoder = nn.TransformerDecoder(
-            decoder_layer=decoder_layer,
-            num_layers=num_layers,
-        )
+        decoder = nn.Linear(embed_dim, dataset.n_vocab)
         super().__init__(
             d_model=embed_dim,
             nhead=num_heads,
             dim_feedforward=sequence_length,
             num_encoder_layers=num_layers,
-            custom_encoder=None,
             custom_decoder=decoder,
-            batch_first=True,
             device=device,
+            batch_first=True,
         )
-        vocab_size = dataset.n_vocab
-        self.pos_encoder = PositionalEncoding(
-            max_len=sequence_length, d_model=embed_dim, dropout=dropout
-        )
-        self.emb = nn.Embedding(vocab_size, embed_dim)
-        self.linear = nn.Linear(embed_dim, vocab_size)
-        self.dropout = nn.Dropout(dropout)
-        self.mask = self.generate_square_subsequent_mask(sequence_length, device)
+        self.pos_encoder = PositionalEncoding(embed_dim, dataset.n_vocab, dropout)
+        self.input_emb = nn.Embedding(dataset.n_vocab, embed_dim)
+        self.src_mask = self.generate_square_subsequent_mask(sequence_length, device)
+        self.ninp = embed_dim
+        self.init_weights()
 
-    def forward(self, x):
-        emb = self.emb(x)
-        x = self.pos_encoder(emb)
-        x = self.decoder(x, memory=x, tgt_mask=self.mask, memory_mask=self.mask)
-        x = self.dropout(x)
-        out = self.linear(x)
-        return out
+    def init_weights(self):
+        initrange = 0.1
+        nn.init.uniform_(self.input_emb.weight, -initrange, initrange)
+        nn.init.zeros_(self.decoder.bias)
+        nn.init.uniform_(self.decoder.weight, -initrange, initrange)
+
+    def forward(self, src):
+        src = self.input_emb(src) * math.sqrt(self.ninp)
+        src = self.pos_encoder(src)
+        output = self.encoder(src, mask=self.src_mask)
+        output = self.decoder(output)
+        return F.log_softmax(output, dim=-1)

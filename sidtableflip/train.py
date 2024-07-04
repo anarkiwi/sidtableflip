@@ -36,8 +36,8 @@ def main():
             input_seq, target_seq = input_seq_target_seq
             input_seq, target_seq = input_seq.to(device), target_seq.to(device)
             outputs = model(input_seq)
-            target_seq = target_seq.contiguous().view(-1)
             outputs = outputs.view(-1, dataset.n_vocab)
+            target_seq = target_seq.contiguous().view(-1)
             loss = criterion(outputs, target_seq.view(-1))
             loss.backward()
             optimizer.step()
