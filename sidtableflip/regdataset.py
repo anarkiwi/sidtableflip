@@ -121,5 +121,8 @@ class RegDataset(torch.utils.data.Dataset):
 
 def get_loader(args, dataset):
     return torch.utils.data.DataLoader(
-        dataset, shuffle=args.shuffle, batch_size=args.batch_size, pin_memory=True
+        dataset,
+        shuffle=args.shuffle,
+        pin_memory=True,
+        batch_size=args.batch_size,
     )

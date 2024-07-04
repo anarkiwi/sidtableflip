@@ -1,7 +1,7 @@
 import math
 import torch
 from torch import nn
-
+import torch.nn.functional as F
 
 # https://github.com/pytorch/examples/blob/main/word_language_model/model.py
 
@@ -23,7 +23,7 @@ class PositionalEncoding(nn.Module):
         >>> pos_encoder = PositionalEncoding(d_model)
     """
 
-    def __init__(self, d_model, dropout=0.1, max_len=5000):
+    def __init__(self, d_model, max_len, dropout):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
 
@@ -52,33 +52,43 @@ class PositionalEncoding(nn.Module):
         return self.dropout(x)
 
 
-class TransformerModel(nn.Module):
+class TransformerModel(nn.Transformer):
     def __init__(
-        self, dataset, embed_dim=128, num_layers=2, num_heads=2, sequence_length=128
+        self,
+        dataset,
+        embed_dim=128,
+        num_layers=2,
+        num_heads=2,
+        sequence_length=128,
+        dropout=0.2,
     ):
-        super().__init__()
-        vocab_size = dataset.n_vocab
-        self.pos_encoder = PositionalEncoding(
-            max_len=sequence_length, d_model=embed_dim
-        )
-        self.emb = nn.Embedding(vocab_size, embed_dim)
-        self.decoder_layer = nn.TransformerDecoderLayer(
+        decoder_layer = nn.TransformerDecoderLayer(
             d_model=embed_dim, nhead=num_heads, batch_first=True
         )
-        self.decoder = nn.TransformerDecoder(
-            decoder_layer=self.decoder_layer,
+        decoder = nn.TransformerDecoder(
+            decoder_layer=decoder_layer,
             num_layers=num_layers,
         )
+        super().__init__(
+            d_model=embed_dim,
+            nhead=num_heads,
+            dim_feedforward=sequence_length,
+            num_encoder_layers=num_layers,
+            custom_encoder=None,
+            custom_decoder=decoder,
+            batch_first=True,
+        )
+        vocab_size = dataset.n_vocab
+        self.pos_encoder = PositionalEncoding(
+            max_len=sequence_length, d_model=embed_dim, dropout=dropout
+        )
+        self.emb = nn.Embedding(vocab_size, embed_dim)
         self.linear = nn.Linear(embed_dim, vocab_size)
-        self.dropout = nn.Dropout(0.2)
-
-    def _generate_square_subsequent_mask(self, sz):
-        return torch.log(torch.tril(torch.ones(sz, sz)))
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
         emb = self.emb(x)
-
-        mask = self._generate_square_subsequent_mask(x.size(1)).to(x.device)
+        mask = self.generate_square_subsequent_mask(x.size(1), x.device)
         x = self.pos_encoder(emb)
         x = self.decoder(x, memory=x, tgt_mask=mask, memory_mask=mask)
         x = self.dropout(x)
