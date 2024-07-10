@@ -15,4 +15,5 @@ def add_args(parser):
     parser.add_argument("--max-files", type=int, default=128)
     parser.add_argument("--diffq", type=int, default=64)
     parser.add_argument("--learning-rate", type=float, default=0.001)
+    parser.add_argument("--token-csv", type=str, default=None)
     return parser

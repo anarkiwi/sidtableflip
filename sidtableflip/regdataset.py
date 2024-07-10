@@ -100,6 +100,8 @@ class RegDataset(torch.utils.data.Dataset):
         )
         self.tokens.reset_index(drop=True, inplace=True)
         self.tokens["n"] = self.tokens.index
+        if self.args.token_csv:
+            self.tokens.to_csv(self.args.token_csv)
         self.dfs = pd.concat(
             [
                 df.merge(self.tokens, on=["reg", "val", "diff"], how="left")

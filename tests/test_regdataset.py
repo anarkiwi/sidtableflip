@@ -14,6 +14,7 @@ class FakeArgs:
         self.sequence_length = sequence_length
         self.max_files = 1
         self.diffq = 64
+        self.token_csv = None
 
 
 class TestRegDatasetLoader(unittest.TestCase):
