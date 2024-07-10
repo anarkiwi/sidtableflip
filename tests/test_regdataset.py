@@ -33,6 +33,10 @@ class TestRegDatasetLoader(unittest.TestCase):
             args = FakeArgs(test_log_name, 2)
             loader = RegDataset(args)
 
+            self.assertEqual(loader.highbitmask(7), 128)
+            self.assertEqual(loader.highbitmask(4), 240)
+            self.assertEqual(loader.highbitmask(1), 254)
+
             test_df = pd.DataFrame(
                 [
                     {"clock": 1, "reg": 1, "val": 1},

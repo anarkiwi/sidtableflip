@@ -42,8 +42,11 @@ class RegDataset(torch.utils.data.Dataset):
         mask = df["reg"] == reg
         df.loc[mask, ["val"]] = df[mask]["val"] & valmask
 
+    def highbitmask(self, bits):
+        return 255 - (2**bits - 1)
+
     def _maskregbits(self, df, reg, bits):
-        self._maskreg(df, reg, 255 - (2**bits - 1))
+        self._maskreg(df, reg, self.highbitmask(bits))
 
     def _squeeze_changes(self, df):
         diff_cols = df.reg.unique()
@@ -61,10 +64,10 @@ class RegDataset(torch.utils.data.Dataset):
     def _quantize_diff(self, df):
         df["diff"] = df["clock"].diff().fillna(0).astype(np.uint64)
 
-        diffq = self.args.diffq**2
-        mask = df["diff"] > diffq
-        df.loc[mask, ["diff"]] = self._downsample_diff(df, diffq)
-        df["diff"] = self._downsample_diff(df, self.args.diffq)
+        for diffq in (self.args.diffq**2,):
+            mask = df["diff"] > diffq
+            df.loc[mask, ["diff"]] = self._downsample_diff(df, diffq)
+            df["diff"] = self._downsample_diff(df, self.args.diffq)
         df = df[["diff", "reg", "val"]]
         return df
 
@@ -72,10 +75,9 @@ class RegDataset(torch.utils.data.Dataset):
         for v in range(3):
             v_offset = v * 7
             # keep high 4 bits, of PCM low
-            self._maskreg(df, 2 + v_offset, 240)
+            self._maskregbits(df, 2 + v_offset, 4)
         # discard low 4 bits of filter cutoff.
         df = df[df["reg"] != 21].copy()
-        # 21 filter cutoff low
         # 22 filter cutoff high
         # 23 filter res + route
         # 24 filter mode + vol
