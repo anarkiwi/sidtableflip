@@ -76,9 +76,12 @@ class RegDataset(torch.utils.data.Dataset):
             v_offset = v * 7
             # keep high 4 bits, of PCM low
             self._maskregbits(df, 2 + v_offset, 4)
+            # keep high 7 bits of freq low
+            self._maskregbits(df, v_offset, 1)
         # discard low 4 bits of filter cutoff.
         df = df[df["reg"] != 21].copy()
-        # 22 filter cutoff high
+        # keep high 4 bits of filter cutoff
+        self._maskregbits(df, 22, 4)
         # 23 filter res + route
         # 24 filter mode + vol
 
