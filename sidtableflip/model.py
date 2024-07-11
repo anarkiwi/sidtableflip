@@ -58,7 +58,7 @@ class TransformerModel(nn.Transformer):
         dataset,
         device,
         embed_dim=128,
-        num_layers=2,
+        num_layers=3,
         num_heads=2,
         sequence_length=128,
         dropout=0.2,
