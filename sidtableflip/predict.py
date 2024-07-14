@@ -20,7 +20,7 @@ def sample_next(predictions):
     return int(next_token.cpu())
 
 
-def generate(model, prompt, args):
+def generate(model, device, prompt, args):
     states = []
 
     for _ in range(args.output_length):
@@ -53,7 +53,7 @@ def main():
     random.seed(time.time())
     start = random.randint(0, n)
     prompt = dataset.dfs_n[start:][: args.sequence_length].unsqueeze(0)
-    states = generate(model, prompt, args)
+    states = generate(model, device, prompt, args)
 
     df = pd.DataFrame(states, columns=["n"]).merge(dataset.tokens, on="n", how="left")
     if args.csv:
