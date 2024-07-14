@@ -20,4 +20,5 @@ def add_args(parser):
     parser.add_argument("--layers", type=int, default=3)
     parser.add_argument("--heads", type=int, default=2)
     parser.add_argument("--embed", type=int, default=256)
+    parser.add_argument("--optimizer", type=str, default="sgd")
     return parser
