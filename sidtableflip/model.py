@@ -93,7 +93,7 @@ class TransformerModel(nn.Transformer):
         return F.log_softmax(output, dim=-1)
 
 
-def get_model(dataset, device, args):
+def get_model(dataset, device, args, mode="default"):
     torch.set_float32_matmul_precision("high")
     model = torch.compile(
         TransformerModel(
@@ -103,7 +103,8 @@ def get_model(dataset, device, args):
             num_heads=args.heads,
             num_layers=args.layers,
             embed_dim=args.embed,
-        )
+        ),
+        mode=mode,
     ).to(device)
     return model
 

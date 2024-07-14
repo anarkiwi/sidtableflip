@@ -56,8 +56,12 @@ def train(model, device, dataset, dataloader, args):
             running_loss += loss.detach().cpu().numpy()
         epoch_loss = running_loss / len(dataloader)
         logging.info(
-            f"Epoch {epoch} running loss: {epoch_loss:.3f}, validation loss {evaluate(model, device, dataset, dataloader):.3f}"
+            f"Epoch {epoch} running loss: {epoch_loss:.3f}",
         )
+        # val_loss = evaluate(model, device, dataset, dataloader)
+        # logging.info(
+        #    f"Epoch {epoch} validation loss {val_loss:.3f}"
+        # )
     return model
 
 
@@ -71,7 +75,7 @@ def main():
     dataloader = get_loader(args, dataset)
 
     device = get_device()
-    model = get_model(dataset, device, args)
+    model = get_model(dataset, device, args, mode="max-autotune")
     model = train(model, device, dataset, dataloader, args)
     best_model = model.state_dict()
     save([best_model], args.model_state)
