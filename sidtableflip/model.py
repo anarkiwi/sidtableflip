@@ -75,18 +75,17 @@ class TransformerModel(nn.Transformer):
         )
         self.pos_encoder = PositionalEncoding(embed_dim, dataset.n_vocab, dropout)
         self.input_emb = nn.Embedding(dataset.n_vocab, embed_dim)
-        self.src_mask = self.generate_square_subsequent_mask(sequence_length, device)
-        self.ninp = embed_dim
+        self.src_mask = self.generate_square_subsequent_mask(sequence_length)
+        self.ninp_sqrt = math.sqrt(embed_dim)
         self.init_weights()
 
-    def init_weights(self):
-        initrange = 0.1
+    def init_weights(self, initrange=0.1):
         nn.init.uniform_(self.input_emb.weight, -initrange, initrange)
         nn.init.zeros_(self.decoder.bias)
         nn.init.uniform_(self.decoder.weight, -initrange, initrange)
 
     def forward(self, src):
-        src = self.input_emb(src) * math.sqrt(self.ninp)
+        src = self.input_emb(src) * self.ninp_sqrt
         src = self.pos_encoder(src)
         output = self.encoder(src, mask=self.src_mask)
         output = self.decoder(output)
