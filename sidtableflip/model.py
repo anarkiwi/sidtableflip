@@ -57,8 +57,8 @@ class TransformerModel(nn.Transformer):
         self,
         dataset,
         device,
-        embed_dim=128,
-        num_layers=3,
+        embed_dim=256,
+        num_layers=4,
         num_heads=2,
         sequence_length=128,
         dropout=0.2,
@@ -91,3 +91,22 @@ class TransformerModel(nn.Transformer):
         output = self.encoder(src, mask=self.src_mask)
         output = self.decoder(output)
         return F.log_softmax(output, dim=-1)
+
+
+def get_model(dataset, device, args):
+    torch.set_float32_matmul_precision("high")
+    model = torch.compile(
+        TransformerModel(
+            dataset,
+            device,
+            sequence_length=args.sequence_length,
+            num_heads=args.heads,
+            num_layers=args.layers,
+            embed_dim=args.embed,
+        )
+    ).to(device)
+    return model
+
+
+def get_device():
+    return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

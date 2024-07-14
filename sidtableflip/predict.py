@@ -4,35 +4,47 @@ import argparse
 import logging
 import random
 import time
-import torch
 import pandas as pd
 from regdataset import RegDataset
+from torch import argmax, roll, load, no_grad
 import torch.nn.functional as F
 from args import add_args
-from model import TransformerModel
+from model import get_device, get_model
 from sidwav import write_samples
 
 
 # TODO: add variation rather than most probable
 def sample_next(predictions):
     probabilities = F.softmax(predictions[:, -1, :], dim=-1).cpu()
-    next_token = torch.argmax(probabilities)
+    next_token = argmax(probabilities)
     return int(next_token.cpu())
+
+
+def generate(model, prompt, args):
+    states = []
+
+    for _ in range(args.output_length):
+        prompt = prompt.to(device)
+        with no_grad():
+            predictions = model(prompt)
+        prompt = roll(prompt.to("cpu"), -1)
+        state = sample_next(predictions)
+        prompt[0][-1] = state
+        states.append(state)
+
+    return states
 
 
 def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
-    torch.set_float32_matmul_precision("high")
 
     parser = add_args(argparse.ArgumentParser())
     args = parser.parse_args()
 
     dataset = RegDataset(args)
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = torch.compile(
-        TransformerModel(dataset, device, sequence_length=args.sequence_length)
-    ).to(device)
-    best_model = torch.load(args.model_state)[0]
+    device = get_device()
+    model = get_model(dataset, device, args)
+    best_model = load(args.model_state)[0]
     model.load_state_dict(best_model)
     model.eval()
 
@@ -41,18 +53,11 @@ def main():
     random.seed(time.time())
     start = random.randint(0, n)
     prompt = dataset.dfs_n[start:][: args.sequence_length].unsqueeze(0)
-    states = []
-
-    for _ in range(args.output_length):
-        prompt = prompt.to(device)
-        with torch.no_grad():
-            predictions = model(prompt)
-        prompt = torch.roll(prompt.to("cpu"), -1)
-        state = sample_next(predictions)
-        prompt[-1][0] = state
-        states.append(state)
+    states = generate(model, prompt, args)
 
     df = pd.DataFrame(states, columns=["n"]).merge(dataset.tokens, on="n", how="left")
+    if args.csv:
+        df.to_csv(args.csv)
     write_samples(df, args.wav)
 
 

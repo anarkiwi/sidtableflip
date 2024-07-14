@@ -63,12 +63,10 @@ class RegDataset(torch.utils.data.Dataset):
 
     def _quantize_diff(self, df):
         df["diff"] = df["clock"].diff().fillna(0).astype(np.uint64)
-
         for diffq in (self.args.diffq**2,):
             mask = df["diff"] > diffq
             df.loc[mask, ["diff"]] = self._downsample_diff(df, diffq)
             df["diff"] = self._downsample_diff(df, self.args.diffq)
-        df = df[["diff", "reg", "val"]]
         return df
 
     def _downsample_df(self, df):
@@ -77,17 +75,16 @@ class RegDataset(torch.utils.data.Dataset):
             # keep high 4 bits, of PCM low
             self._maskregbits(df, 2 + v_offset, 4)
             # keep high 7 bits of freq low
-            self._maskregbits(df, v_offset, 1)
+            # self._maskregbits(df, v_offset, 1)
         # discard low 4 bits of filter cutoff.
         df = df[df["reg"] != 21].copy()
         # keep high 4 bits of filter cutoff
-        self._maskregbits(df, 22, 4)
+        # self._maskregbits(df, 22, 4)
         # 23 filter res + route
         # 24 filter mode + vol
-
         df = self._squeeze_changes(df)
         df = self._quantize_diff(df)
-        return df
+        return df[["diff", "reg", "val"]]
 
     def _load(self):
         random.seed(0)

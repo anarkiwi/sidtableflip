@@ -66,7 +66,7 @@ class TestRegDatasetLoader(unittest.TestCase):
                 ],
                 dtype=np.uint32,
             )
-            quantize_df = loader._quantize_diff(squeeze_df)
+            quantize_df = loader._quantize_diff(squeeze_df)[compare_df.columns]
             self.assertTrue(compare_df.equals(quantize_df), quantize_df)
 
             results = [(i.tolist(), j.tolist()) for i, j in loader]
