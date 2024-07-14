@@ -66,7 +66,7 @@ class RegDataset(torch.utils.data.Dataset):
         for diffq in (self.args.diffq**2,):
             mask = df["diff"] > diffq
             df.loc[mask, ["diff"]] = self._downsample_diff(df, diffq)
-            df["diff"] = self._downsample_diff(df, self.args.diffq)
+        df["diff"] = self._downsample_diff(df, self.args.diffq)
         return df
 
     def _downsample_df(self, df):
