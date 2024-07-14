@@ -34,9 +34,9 @@ def train(model, device, dataset, dataloader, args):
     last_log = None
     for epoch in range(args.max_epochs):
         model.train()
-        # optimizer.zero_grad()
         running_loss = 0
         for batch, input_seq_target_seq in enumerate(dataloader):
+            optimizer.zero_grad()
             model.zero_grad()
             input_seq, target_seq = input_seq_target_seq
             input_seq, target_seq = input_seq.to(device), target_seq.to(device)
