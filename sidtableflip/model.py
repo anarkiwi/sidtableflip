@@ -75,7 +75,7 @@ class TransformerModel(nn.Transformer):
         )
         self.pos_encoder = PositionalEncoding(embed_dim, dataset.n_vocab, dropout)
         self.input_emb = nn.Embedding(dataset.n_vocab, embed_dim)
-        self.src_mask = self.generate_square_subsequent_mask(sequence_length)
+        self.src_mask = self.generate_square_subsequent_mask(sequence_length).to(device)
         self.ninp_sqrt = math.sqrt(embed_dim)
         self.init_weights()
 

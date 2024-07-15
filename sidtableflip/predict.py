@@ -16,19 +16,21 @@ from sidwav import write_samples
 # TODO: add variation rather than most probable
 def sample_next(predictions):
     probabilities = F.softmax(predictions[:, -1, :], dim=-1).cpu()
-    next_token = argmax(probabilities)
-    return int(next_token.cpu())
+    return int(argmax(probabilities))
 
 
-def generate(model, device, prompt, args):
+def generate(dataset, model, device, prompt, args):
     states = []
+    cycles = 0
 
-    for _ in range(args.output_length):
+    while cycles < args.output_cycles:
         prompt = prompt.to(device)
         with no_grad():
             predictions = model(prompt)
         prompt = roll(prompt.to("cpu"), -1)
         state = sample_next(predictions)
+        diff = dataset.tokens[dataset.tokens["n"] == state].iloc[0]["diff"]
+        cycles += diff
         prompt[0][-1] = state
         states.append(state)
 
@@ -53,7 +55,7 @@ def main():
     random.seed(time.time())
     start = random.randint(0, n)
     prompt = dataset.dfs_n[start:][: args.sequence_length].unsqueeze(0)
-    states = generate(model, device, prompt, args)
+    states = generate(dataset, model, device, prompt, args)
 
     df = pd.DataFrame(states, columns=["n"]).merge(dataset.tokens, on="n", how="left")
     if args.csv:

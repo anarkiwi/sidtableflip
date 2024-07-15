@@ -11,7 +11,7 @@ def add_args(parser):
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--wav", type=str, default="/scratch/tmp/sidtableflip.wav")
     parser.add_argument("--csv", type=str, default="/scratch/tmp/sidtableflip.csv")
-    parser.add_argument("--output_length", type=int, default=10000)
+    parser.add_argument("--output-cycles", type=int, default=60e6)
     parser.add_argument("--shuffle", type=bool, default=True)
     parser.add_argument("--max-files", type=int, default=256)
     parser.add_argument("--diffq", type=int, default=4)
