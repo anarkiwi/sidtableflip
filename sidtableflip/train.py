@@ -75,7 +75,7 @@ def main():
     dataloader = get_loader(args, dataset)
 
     device = get_device()
-    model = get_model(dataset, device, args, mode="max-autotune")
+    model = get_model(dataset, device, args)
     model = train(model, device, dataset, dataloader, args)
     best_model = model.state_dict()
     save([best_model], args.model_state)
