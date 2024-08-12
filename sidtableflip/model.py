@@ -75,7 +75,9 @@ class TransformerModel(nn.Transformer):
         )
         self.pos_encoder = PositionalEncoding(embed_dim, dataset.n_vocab, dropout)
         self.input_emb = nn.Embedding(dataset.n_vocab, embed_dim)
-        self.src_mask = self.generate_square_subsequent_mask(sequence_length).to(device)
+        self.src_mask = self.generate_square_subsequent_mask(
+            sequence_length, device=device
+        )
         self.ninp_sqrt = math.sqrt(embed_dim)
         self.init_weights()
 
@@ -87,12 +89,12 @@ class TransformerModel(nn.Transformer):
     def forward(self, src):
         src = self.input_emb(src) * self.ninp_sqrt
         src = self.pos_encoder(src)
-        output = self.encoder(src, mask=self.src_mask)
+        output = self.encoder(src, mask=self.src_mask, is_causal=True)
         output = self.decoder(output)
         return F.log_softmax(output, dim=-1)
 
 
-def get_model(dataset, device, args, mode="default"):
+def get_model(dataset, device, args):
     torch.set_float32_matmul_precision("high")
     model = torch.compile(
         TransformerModel(
@@ -103,7 +105,8 @@ def get_model(dataset, device, args, mode="default"):
             num_layers=args.layers,
             embed_dim=args.embed,
         ),
-        mode=mode,
+        options={"triton.cudagraphs": True},
+        fullgraph=True,
     ).to(device)
     return model
 

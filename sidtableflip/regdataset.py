@@ -16,8 +16,11 @@ class RegDataset(torch.utils.data.Dataset):
         self.tokens = None
         self._load()
         self.n_vocab = len(self.tokens)
+        self.n_reg_val_vocab = len(self.reg_val_tokens)
         self.n_words = len(self.dfs_n)
-        logging.info(f"n_vocab: {self.n_vocab}, n_words {self.n_words}")
+        logging.info(
+            f"n_vocab: {self.n_vocab}, n_reg_val_vocab {self.n_reg_val_vocab}, n_words {self.n_words}"
+        )
 
     def _read_df(self, name):
         logging.info(f"loading {name}")
@@ -97,6 +100,11 @@ class RegDataset(torch.utils.data.Dataset):
         self.dfs = [self._downsample_df(self._read_df(name)) for name in sorted(files)]
         self.tokens = (
             pd.concat(self.dfs).drop_duplicates().sort_values(["reg", "val", "diff"])
+        )
+        self.reg_val_tokens = (
+            pd.concat(self.dfs)[["reg", "val"]]
+            .drop_duplicates()
+            .sort_values(["reg", "val"])
         )
         self.tokens.reset_index(drop=True, inplace=True)
         self.tokens["n"] = self.tokens.index
