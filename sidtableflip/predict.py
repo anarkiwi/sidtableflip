@@ -22,6 +22,7 @@ def sample_next(predictions):
 def generate(dataset, model, device, prompt, args):
     states = []
     cycles = 0
+    last_log = 0
 
     while cycles < args.output_cycles:
         prompt = prompt.to(device)
@@ -33,6 +34,11 @@ def generate(dataset, model, device, prompt, args):
         cycles += diff
         prompt[0][-1] = state
         states.append(state)
+        progress = cycles / float(args.output_cycles) * 100
+        now = time.time()
+        if now - last_log > 10:
+            last_log = now
+            logging.info("%.2f%%", process)
 
     return states
 

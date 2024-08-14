@@ -58,6 +58,7 @@ def train(model, device, dataset, dataloader, args):
         logging.info(
             f"Epoch {epoch} running loss: {epoch_loss:.3f}",
         )
+        save([model.state_dict()], args.model_state)
         # val_loss = evaluate(model, device, dataset, dataloader)
         # logging.info(
         #    f"Epoch {epoch} validation loss {val_loss:.3f}"
@@ -76,9 +77,7 @@ def main():
 
     device = get_device()
     model = get_model(dataset, device, args)
-    model = train(model, device, dataset, dataloader, args)
-    best_model = model.state_dict()
-    save([best_model], args.model_state)
+    train(model, device, dataset, dataloader, args)
 
 
 if __name__ == "__main__":
