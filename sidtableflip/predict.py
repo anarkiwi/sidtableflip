@@ -38,7 +38,7 @@ def generate(dataset, model, device, prompt, args):
         now = time.time()
         if now - last_log > 10:
             last_log = now
-            logging.info("%.2f%%", process)
+            logging.info("%.2f%%", progress)
 
     return states
 
