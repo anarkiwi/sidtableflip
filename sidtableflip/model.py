@@ -57,6 +57,7 @@ class TransformerModel(nn.Transformer):
         num_layers=4,
         num_heads=2,
         sequence_length=128,
+        max_len=128 * 10,
         dropout=0.2,
     ):
         decoder = nn.Linear(embed_dim, dataset.n_vocab)
@@ -69,9 +70,7 @@ class TransformerModel(nn.Transformer):
             device=device,
             batch_first=True,
         )
-        self.pos_encoder = PositionalEncoding(
-            embed_dim, sequence_length, device, dropout
-        )
+        self.pos_encoder = PositionalEncoding(embed_dim, max_len, device, dropout)
         self.input_emb = nn.Embedding(dataset.n_vocab, embed_dim)
         self.src_mask = self.generate_square_subsequent_mask(
             sequence_length, device=device
@@ -101,6 +100,7 @@ def get_model(dataset, device, args):
             num_heads=args.heads,
             num_layers=args.layers,
             embed_dim=args.embed,
+            max_len=args.max_sequence_length,
         ),
         options={"triton.cudagraphs": True},
         fullgraph=True,
