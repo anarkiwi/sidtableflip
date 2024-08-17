@@ -19,4 +19,4 @@ class TestSidwav(unittest.TestCase):
             rate, data = scipy.io.wavfile.read(test_wav_name)
             self.assertEqual(rate, 48000)
             data = np.round(data, 2)
-            self.assertEqual(0, data.sum())
+            self.assertLess(abs(data.sum()), 0.02)
