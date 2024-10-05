@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
 import argparse
-import logging
 import random
 import time
 import pandas as pd
-from regdataset import RegDataset
+from torchtune.utils import get_logger
 from torch import argmax, roll, load, no_grad
 import torch.nn.functional as F
 from args import add_args
 from model import get_device, get_model
+from regdataset import RegDataset
 from sidwav import write_samples
 
 
@@ -23,6 +23,7 @@ def generate(dataset, model, device, prompt, args):
     states = []
     cycles = 0
     last_log = 0
+    logger = get_logger("INFO")
 
     while cycles < args.output_cycles:
         prompt = prompt.to(device)
@@ -38,14 +39,12 @@ def generate(dataset, model, device, prompt, args):
         now = time.time()
         if now - last_log > 10:
             last_log = now
-            logging.info("%.2f%%", progress)
+            logger.info("%.2f%%", progress)
 
     return states
 
 
 def main():
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
-
     parser = add_args(argparse.ArgumentParser())
     args = parser.parse_args()
 

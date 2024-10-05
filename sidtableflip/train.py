@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 import argparse
-import logging
 import time
 from torch import optim, save, no_grad
 from torch.nn import CrossEntropyLoss
+from torchtune.utils import get_logger
 from regdataset import RegDataset, get_loader
 from args import add_args
 from model import get_device, get_model
@@ -26,6 +26,7 @@ def evaluate(model, device, dataset, dataloader):
 
 
 def train(model, device, dataset, dataloader, args):
+    logger = get_logger("INFO")
     optimizer = {
         "adam": optim.Adam(model.parameters(), lr=args.learning_rate),
         "sgd": optim.SGD(model.parameters(), lr=args.learning_rate),
@@ -50,15 +51,12 @@ def train(model, device, dataset, dataloader, args):
             if last_log is None or now - last_log > 10:
                 progress = (batch * args.batch_size) / dataset.n_words * 100
                 last_log = now
-                logging.info(
-                    f"epoch {epoch} batch {batch} ({progress: .2f}%): loss: {loss.item(): .2f}"
-                )
-                print(
+                logger.info(
                     f"epoch {epoch} batch {batch} ({progress: .2f}%): loss: {loss.item(): .2f}"
                 )
             running_loss += loss.detach().cpu().numpy()
         epoch_loss = running_loss / len(dataloader)
-        logging.info(
+        logger.info(
             f"Epoch {epoch} running loss: {epoch_loss:.3f}",
         )
         save([model.state_dict()], args.model_state)
@@ -70,8 +68,6 @@ def train(model, device, dataset, dataloader, args):
 
 
 def main():
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
-
     parser = add_args(argparse.ArgumentParser())
     args = parser.parse_args()
 
