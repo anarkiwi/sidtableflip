@@ -1,2 +1,2 @@
 pytype==2024.04.11
-pytest==8.3.2
+pytest==8.3.3
