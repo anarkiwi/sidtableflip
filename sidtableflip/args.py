@@ -1,3 +1,6 @@
+from model import MODEL_GETTERS
+
+
 def add_args(parser):
     parser.add_argument(
         "--reglogs",
@@ -29,5 +32,5 @@ def add_args(parser):
     parser.add_argument("--rope_base", type=int, default=10000)
     parser.add_argument("--attn_dropout", type=float, default=0)
     parser.add_argument("--optimizer", type=str, default="adam")
-    parser.add_argument("--model", type=str, default="llam2")
+    parser.add_argument("--model", choices=list(MODEL_GETTERS.keys()), default="llam2")
     return parser
