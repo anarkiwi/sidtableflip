@@ -2,6 +2,8 @@ import math
 import torch
 from torch import nn
 import torch.nn.functional as F
+import torchtune
+from torchtune.models.llama2._component_builders import llama2
 
 # from fairseq.modules.positional_encoding import PositionalEncoding
 # https://github.com/pytorch/examples/blob/main/word_language_model/model.py
@@ -92,16 +94,27 @@ class TransformerModel(nn.Transformer):
 
 def get_model(dataset, device, args):
     torch.set_float32_matmul_precision("high")
+    model = llama2(
+        vocab_size=dataset.n_vocab,
+        num_layers=args.layers,
+        num_heads=args.heads,
+        num_kv_heads=args.heads,
+        embed_dim=args.embed,
+        max_seq_len=args.max_sequence_length,
+        attn_dropout=0.0,
+        norm_eps=1e-5,
+    )
+    # model = TransformerModel(
+    #    dataset,
+    #    device,
+    #    sequence_length=args.sequence_length,
+    #    num_heads=args.heads,
+    #    num_layers=args.layers,
+    #    embed_dim=args.embed,
+    #    max_len=args.max_sequence_length,
+    # )
     model = torch.compile(
-        TransformerModel(
-            dataset,
-            device,
-            sequence_length=args.sequence_length,
-            num_heads=args.heads,
-            num_layers=args.layers,
-            embed_dim=args.embed,
-            max_len=args.max_sequence_length,
-        ),
+        model,
         options={"triton.cudagraphs": True},
         fullgraph=True,
     ).to(device)

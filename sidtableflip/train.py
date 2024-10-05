@@ -53,6 +53,9 @@ def train(model, device, dataset, dataloader, args):
                 logging.info(
                     f"epoch {epoch} batch {batch} ({progress: .2f}%): loss: {loss.item(): .2f}"
                 )
+                print(
+                    f"epoch {epoch} batch {batch} ({progress: .2f}%): loss: {loss.item(): .2f}"
+                )
             running_loss += loss.detach().cpu().numpy()
         epoch_loss = running_loss / len(dataloader)
         logging.info(
