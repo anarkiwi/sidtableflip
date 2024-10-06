@@ -10,7 +10,7 @@ def add_args(parser):
         # default="/scratch/hvsc/C64Music/MUSICIANS/H/Hubbard_Rob/*/*/*-1.dump.zst",
         # default="/scratch/hvsc/C64Music/MUSICIANS/J/Jammer/Grid_Runner/1/Grid_Runner-1.dump.zst",
     )
-    parser.add_argument("--model_state", type=str, default="/scratch/tmp/model.pth")
+    parser.add_argument("--model_state", type=str, default="/scratch/tmp/sidtableflip.pth")
     parser.add_argument("--sequence-length", type=int, default=2048)
     parser.add_argument("--max-sequence-length", type=int, default=2048 * 10)
     parser.add_argument("--max-epochs", type=int, default=3)

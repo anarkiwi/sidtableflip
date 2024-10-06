@@ -5,6 +5,7 @@ COPY sidtableflip /sidtableflip
 COPY tests /tests
 WORKDIR /
 RUN PYTHONPATH=. pytest /tests
+RUN perl -pi -e "s/class TransformerDecoder\(nn.Module\):/from monkey import Monkey\nclass TransformerDecoder\(Monkey\):/" $(python3 -c "import torchtune.modules.transformer;print(torchtune.modules.transformer.__file__)")
 
 # docker build -f Dockerfile . -t anarkiwi/sidtableflip
 # docker run --gpus=all -v /scratch:/scratch -ti anarkiwi/sidtableflip /sidtableflip/train.py --batch-size 64

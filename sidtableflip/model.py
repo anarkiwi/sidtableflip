@@ -100,15 +100,12 @@ MODEL_GETTERS = {
 }
 
 
-def get_model(dataset, device, args):
+def get_model(dataset, args):
     torch.set_float32_matmul_precision("high")
     model = MODEL_GETTERS[args.model](dataset, args)
-    model = torch.compile(
-        model,
-        options={"triton.cudagraphs": True},
-        fullgraph=True,
-    ).to(device)
-    return model
+    model.dataset = dataset
+    model.args = args
+    return torch.compile(model)
 
 
 def get_device():
