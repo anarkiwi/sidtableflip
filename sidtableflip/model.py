@@ -101,7 +101,7 @@ MODEL_GETTERS = {
 
 
 def get_model(dataset, args):
-    torch.set_float32_matmul_precision("high")
+    torch.set_float32_matmul_precision(args.precision)
     model = MODEL_GETTERS[args.model](dataset, args)
     model.dataset = dataset
     model.args = args

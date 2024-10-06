@@ -2,6 +2,7 @@
 
 import logging
 import glob
+import os
 import random
 import torch
 import numpy as np
@@ -137,4 +138,5 @@ def get_loader(args, dataset):
         shuffle=args.shuffle,
         pin_memory=True,
         batch_size=args.batch_size,
+        num_workers=os.cpu_count(),
     )
