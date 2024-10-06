@@ -19,11 +19,10 @@ def sample_next(predictions):
     return int(argmax(probabilities))
 
 
-def generate(dataset, model, device, prompt, args):
+def generate(logger, dataset, model, device, prompt, args):
     states = []
     cycles = 0
     last_log = 0
-    logger = get_logger("INFO")
 
     while cycles < args.output_cycles:
         prompt = prompt.to(device)
@@ -47,7 +46,7 @@ def generate(dataset, model, device, prompt, args):
 def main():
     parser = add_args(argparse.ArgumentParser())
     args = parser.parse_args()
-
+    logger = get_logger("INFO")
     dataset = RegDataset(args)
     device = get_device()
     model = get_model(dataset, args).to(device)
@@ -56,11 +55,11 @@ def main():
     model.eval()
 
     # TODO: CLI prompt input.
-    n = len(dataset.dfs_n)
     random.seed(time.time())
-    start = random.randint(0, n)
+    start = random.randint(0, dataset.n_words)
+    logger.info("starting at %u / %u", start, dataset.n_words)
     prompt = dataset.dfs_n[start:][: args.sequence_length].unsqueeze(0)
-    states = generate(dataset, model, device, prompt, args)
+    states = generate(logger, dataset, model, device, prompt, args)
 
     df = pd.DataFrame(states, columns=["n"]).merge(dataset.tokens, on="n", how="left")
     if args.csv:
