@@ -11,7 +11,9 @@ from model import get_model
 
 def train(model, dataset, dataloader, args):
     trainer = pl.Trainer(
-        max_epochs=args.max_epochs, default_root_dir=os.path.dirname(args.model_state)
+        max_epochs=args.max_epochs,
+        default_root_dir=os.path.dirname(args.model_state),
+        precision=args.trainer_precision,
     )
     trainer.fit(model, dataloader)
     torch.save([model.state_dict()], args.model_state)

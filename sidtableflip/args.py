@@ -37,4 +37,5 @@ def add_args(parser):
     parser.add_argument(
         "--precision", choices=["highest", "high", "medium"], default="medium"
     )
+    parser.add_argument("--trainer-precision", type=str, default="bf16-mixed")
     return parser
