@@ -31,6 +31,5 @@ def add_args(parser):
     parser.add_argument("--norm_eps", type=float, default=1e-5)
     parser.add_argument("--rope_base", type=int, default=10000)
     parser.add_argument("--attn_dropout", type=float, default=0)
-    parser.add_argument("--optimizer", type=str, default="adam")
     parser.add_argument("--model", choices=list(MODEL_GETTERS.keys()), default="llama2")
     return parser
