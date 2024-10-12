@@ -8,12 +8,12 @@ class Monkey(LightningModule):
         super().__init__()
         self.loss_fn = CrossEntropyLoss()
         self.args = None
-        self.dataset = None
+        self.n_vocab = None
 
     def training_step(self, train_batch, batch_idx):
         x, y = train_batch
         outputs = self(x)
-        outputs = outputs.view(-1, self.dataset.n_vocab)
+        outputs = outputs.view(-1, self.n_vocab)
         loss = self.loss_fn(outputs, y.contiguous().view(-1))
         self.log("train_loss", loss)
         return loss
