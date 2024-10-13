@@ -103,7 +103,6 @@ MODEL_GETTERS = {
 def get_model(dataset, args):
     torch.set_float32_matmul_precision(args.precision)
     model = MODEL_GETTERS[args.model](dataset, args)
-    model.n_vocab = dataset.n_vocab
     model.args = args
     return torch.compile(model)
 

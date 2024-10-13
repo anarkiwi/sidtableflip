@@ -17,13 +17,17 @@ def add_args(parser):
     parser.add_argument("--max-sequence-length", type=int, default=2048 * 10)
     parser.add_argument("--max-epochs", type=int, default=2)
     parser.add_argument("--batch-size", type=int, default=4)
-    parser.add_argument("--wav", type=str, default="/scratch/sidtableflip/sidtableflip.wav")
-    parser.add_argument("--csv", type=str, default="/scratch/sidtableflip/sidtableflip.csv")
+    parser.add_argument(
+        "--wav", type=str, default="/scratch/sidtableflip/sidtableflip.wav"
+    )
+    parser.add_argument(
+        "--csv", type=str, default="/scratch/sidtableflip/sidtableflip.csv"
+    )
     parser.add_argument("--output-cycles", type=int, default=60e6)
     parser.add_argument("--shuffle", type=bool, default=True)
     parser.add_argument("--max-files", type=int, default=128)
     parser.add_argument("--diffq", type=int, default=4)
-    parser.add_argument("--learning-rate", type=float, default=1e-4)
+    parser.add_argument("--learning-rate", type=float, default=1e-3)
     parser.add_argument("--token-csv", type=str, default=None)
     parser.add_argument("--layers", type=int, default=4)
     parser.add_argument("--heads", type=int, default=4)
