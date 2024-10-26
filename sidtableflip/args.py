@@ -28,9 +28,11 @@ def add_args(parser):
     parser.add_argument("--max-files", type=int, default=256)
     parser.add_argument("--diffq", type=int, default=4)
     parser.add_argument("--learning-rate", type=float, default=1e-3)
-    parser.add_argument("--token-csv", type=str, default=None)
-    parser.add_argument("--layers", type=int, default=8)
-    parser.add_argument("--heads", type=int, default=8)
+    parser.add_argument(
+        "--token-csv", type=str, default="/scratch/sidtableflip/tokens.csv"
+    )
+    parser.add_argument("--layers", type=int, default=4)
+    parser.add_argument("--heads", type=int, default=4)
     parser.add_argument("--kv_heads", type=int, default=None)
     parser.add_argument("--embed", type=int, default=128)
     parser.add_argument("--intermediate", type=int, default=None)

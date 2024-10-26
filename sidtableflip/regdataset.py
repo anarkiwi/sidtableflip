@@ -10,8 +10,9 @@ import pandas as pd
 
 
 class RegDataset(torch.utils.data.Dataset):
-    def __init__(self, args):
+    def __init__(self, args, logger=logging):
         self.args = args
+        self.logger = logger
         self.dfs = None
         self.dfs_n = None
         self.tokens = None
@@ -19,12 +20,12 @@ class RegDataset(torch.utils.data.Dataset):
         self.n_vocab = len(self.tokens)
         self.n_reg_val_vocab = len(self.reg_val_tokens)
         self.n_words = len(self.dfs_n)
-        logging.info(
+        self.logger.info(
             f"n_vocab: {self.n_vocab}, n_reg_val_vocab {self.n_reg_val_vocab}, n_words {self.n_words}"
         )
 
     def _read_df(self, name):
-        logging.info(f"loading {name}")
+        self.logger.info(f"loading {name}")
         df = pd.read_csv(
             name,
             sep=" ",
@@ -67,7 +68,8 @@ class RegDataset(torch.utils.data.Dataset):
 
     def _quantize_diff(self, df):
         df["diff"] = df["clock"].diff().fillna(0).astype(np.uint64)
-        for diffq in (self.args.diffq**2,):
+        for diffq_pow in (2, 3, 4, 5):
+            diffq = self.args.diffq**diffq_pow
             mask = df["diff"] > diffq
             df.loc[mask, ["diff"]] = self._downsample_diff(df, diffq)
         df["diff"] = self._downsample_diff(df, self.args.diffq)
@@ -109,7 +111,9 @@ class RegDataset(torch.utils.data.Dataset):
         )
         self.tokens.reset_index(drop=True, inplace=True)
         self.tokens["n"] = self.tokens.index
+        self.tokens = self.tokens.sort_values(["n"])
         if self.args.token_csv:
+            self.logger.info("writing %s", self.args.token_csv)
             self.tokens.to_csv(self.args.token_csv)
         self.dfs = pd.concat(
             [

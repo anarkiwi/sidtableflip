@@ -47,7 +47,7 @@ def main():
     parser = add_args(argparse.ArgumentParser())
     args = parser.parse_args()
     logger = get_logger("INFO")
-    dataset = RegDataset(args)
+    dataset = RegDataset(args, logger=logger)
     device = get_device()
     model = get_model(dataset, args).to(device)
     best_model = load(args.model_state, weights_only=True)[0]
