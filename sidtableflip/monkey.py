@@ -6,18 +6,15 @@ from pytorch_lightning import LightningModule
 class Monkey(LightningModule):
     def __init__(self):
         super().__init__()
-        self.loss_fn = None
+        self.loss_fn = CrossEntropyLoss()
         self.args = None
 
     def training_step(self, train_batch, batch_idx):
         x, y = train_batch
         outputs = self(x)
         outputs = outputs.view(-1, self.tok_embeddings.num_embeddings)
-        if self.loss_fn is None:
-            self.loss_fn = CrossEntropyLoss()
         loss = self.loss_fn(outputs, y.contiguous().view(-1))
-        # big slowdown to self.log!
-        # self.log("train_loss", loss)
+        self.log("train_loss", loss, on_epoch=False, on_step=True, prog_bar=True)
         return loss
 
     def configure_optimizers(self):
