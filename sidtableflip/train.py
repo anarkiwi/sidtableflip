@@ -10,14 +10,27 @@ from args import add_args
 from model import get_model
 
 
-def train(model, dataset, dataloader, args):
+class SaveCallback(pl.callbacks.Callback):
+    def __init__(self, args, logger, model):
+        self.args = args
+        self.logger = logger
+        self.model = model
+
+    def on_train_epoch_end(self, trainer, pl_module):
+        self.logger.info("saving to %s", self.args.model_state)
+        torch.save([self.model.state_dict()], self.args.model_state)
+
+
+def train(model, dataset, dataloader, args, logger):
+    callback = SaveCallback(args, logger, model)
     trainer = pl.Trainer(
         max_epochs=args.max_epochs,
         default_root_dir=os.path.dirname(args.model_state),
         precision=args.trainer_precision,
+        callbacks=[callback],
+        enable_checkpointing=False,
     )
     trainer.fit(model, dataloader)
-    torch.save([model.state_dict()], args.model_state)
     return model
 
 
@@ -28,7 +41,7 @@ def main():
     dataset = RegDataset(args, logger=logger)
     dataloader = get_loader(args, dataset)
     model = get_model(dataset, args)
-    train(model, dataset, dataloader, args)
+    train(model, dataset, dataloader, args, logger)
 
 
 if __name__ == "__main__":
