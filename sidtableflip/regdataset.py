@@ -33,8 +33,8 @@ class RegDataset(torch.utils.data.Dataset):
             dtype={
                 "clock": np.uint64,
                 "chipno": np.uint8,
-                "reg": np.uint8,
-                "val": np.uint8,
+                "reg": np.int16,
+                "val": np.uint32,
             },
         )
         assert df["reg"].min() >= 0
@@ -56,7 +56,7 @@ class RegDataset(torch.utils.data.Dataset):
     def _squeeze_changes(self, df):
         diff_cols = df.reg.unique()
         reg_df = (
-            df.pivot(columns="reg", values="val").ffill().fillna(0).astype(np.uint8)
+            df.pivot(columns="reg", values="val").ffill().fillna(0).astype(np.int16)
         )
         reg_df = reg_df.loc[
             (reg_df[diff_cols].shift(fill_value=0) != reg_df[diff_cols]).any(axis=1)
@@ -90,7 +90,11 @@ class RegDataset(torch.utils.data.Dataset):
         # 24 filter mode + vol
         df = self._squeeze_changes(df)
         df = self._quantize_diff(df)
-        return df[["diff", "reg", "val"]]
+        df = df.loc[df.index.repeat(2)]
+        df.loc[::2, ["reg"]] = -1
+        m = df["reg"] == -1
+        df.loc[m, ["val"]] = df.loc[m, "diff"]
+        return df[["reg", "val"]]
 
     def _load(self):
         random.seed(0)
@@ -101,14 +105,13 @@ class RegDataset(torch.utils.data.Dataset):
             files.append(file)
             globbed.remove(file)
         self.dfs = [self._downsample_df(self._read_df(name)) for name in sorted(files)]
-        self.tokens = (
-            pd.concat(self.dfs).drop_duplicates().sort_values(["reg", "val", "diff"])
-        )
+        self.tokens = pd.concat(self.dfs).drop_duplicates().sort_values(["reg", "val"])
         self.reg_val_tokens = (
             pd.concat(self.dfs)[["reg", "val"]]
             .drop_duplicates()
             .sort_values(["reg", "val"])
         )
+        self.reg_val_tokens = self.reg_val_tokens[self.reg_val_tokens["reg"] != -1]
         self.tokens.reset_index(drop=True, inplace=True)
         self.tokens["n"] = self.tokens.index
         self.tokens = self.tokens.sort_values(["n"])
@@ -116,10 +119,7 @@ class RegDataset(torch.utils.data.Dataset):
             self.logger.info("writing %s", self.args.token_csv)
             self.tokens.to_csv(self.args.token_csv)
         self.dfs = pd.concat(
-            [
-                df.merge(self.tokens, on=["reg", "val", "diff"], how="left")
-                for df in self.dfs
-            ]
+            [df.merge(self.tokens, on=["reg", "val"], how="left") for df in self.dfs]
         )
         self.dfs_n = torch.LongTensor(self.dfs["n"].values)
 
