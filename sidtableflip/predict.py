@@ -51,7 +51,7 @@ def main():
     dataset = RegDataset(args, logger=logger)
     device = get_device()
     model = get_model(dataset, args).to(device)
-    best_model = load(args.model_state, weights_only=True)[0]
+    best_model = load(args.model_state, weights_only=True, map_location=device)[0]
     model.load_state_dict(best_model)
     model.eval()
 
