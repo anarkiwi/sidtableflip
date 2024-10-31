@@ -18,7 +18,9 @@ class SaveCallback(pl.callbacks.Callback):
 
     def on_train_epoch_end(self, trainer, pl_module):
         self.logger.info("saving to %s", self.args.model_state)
-        torch.save([self.model.state_dict()], self.args.model_state)
+        state_dict = self.model.state_dict()
+        torch.save([state_dict], self.args.model_state)
+        torch.save([state_dict], self.args.model_state + f"{self.model.current_epoch}")
 
 
 def train(model, dataset, dataloader, args, logger):
