@@ -16,9 +16,9 @@ class Monkey(LightningModule):
         y_cont = y.contiguous().view(-1)
         loss = self.loss_fn(outputs, y_cont)
         preds = torch.argmax(outputs, dim=1)
-        loss = self.loss_fn(outputs, y_cont).detach().cpu()
+        loss = self.loss_fn(outputs, y_cont)
         acc = (preds == y_cont).float().mean().detach().cpu()
-        self.log("train_loss", loss, on_epoch=False, on_step=True)
+        self.log("train_loss", loss.detach().cpu(), on_epoch=False, on_step=True)
         self.log("train_acc", acc, on_epoch=False, on_step=True)
         return loss
 
