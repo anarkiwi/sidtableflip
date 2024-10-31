@@ -15,7 +15,7 @@ def write_samples(df, name, diffpad=8):
         # 50% pwm
         sid.write_register(3 + offset, 16)
     raw_samples = []
-    df["delay"] = df["diff"] * sid.clock_frequency / 1e6 / 1e6
+    df["delay"] = df["diff"] * (sid.clock_frequency / 1e6 / 1e6)
     for row in df.itertuples():
         raw_samples.extend(sid.clock(timedelta(seconds=row.delay)))
         sid.write_register(row.reg, row.val)
