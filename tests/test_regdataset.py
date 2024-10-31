@@ -71,17 +71,10 @@ class TestRegDatasetLoader(unittest.TestCase):
 
             results = [(i.tolist(), j.tolist()) for i, j in loader]
             self.assertEqual(
-                [
-                    ([0, 1], [1, 0]),
-                    ([1, 0], [0, 2]),
-                    ([0, 2], [2, 0]),
-                    ([2, 0], [0, 3]),
-                    ([0, 3], [3, 0]),
-                    ([3, 0], [0, 4]),
-                ],
+                [([0, 1], [1, 2]), ([1, 2], [2, 3])],
                 results,
             )
             tokens = [tuple([int(i) for i in x]) for x in loader.tokens.values]
             self.assertEqual(
-                [(-1, 64, 0), (5, 6, 1), (8, 9, 2), (11, 12, 3), (13, 14, 4)], tokens
+                [(5, 6, 64, 0), (8, 9, 64, 1), (11, 12, 64, 2), (13, 14, 64, 3)], tokens
             )

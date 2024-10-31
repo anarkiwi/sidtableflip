@@ -6,9 +6,9 @@ def add_args(parser):
         "--reglogs",
         type=str,
         # default="/scratch/tmp/goto80/*zst",
-        default="/scratch/hvsc/C64Music/MUSICIANS/G/Goto80/*/*/*-1.dump.zst",
+        # default="/scratch/hvsc/C64Music/MUSICIANS/G/Goto80/*/*/*-1.dump.zst",
         # default="/scratch/hvsc/C64Music/MUSICIANS/H/Hubbard_Rob/*/*/*-1.dump.zst",
-        # default="/scratch/hvsc/C64Music/MUSICIANS/J/Jammer/Grid_Runner/1/Grid_Runner-1.dump.zst",
+        default="/scratch/hvsc/C64Music/MUSICIANS/J/Jammer/Grid_Runner/1/Grid_Runner-1.dump.zst",
     )
     parser.add_argument(
         "--model_state", type=str, default="/scratch/sidtableflip/sidtableflip.pth"
@@ -27,7 +27,7 @@ def add_args(parser):
     parser.add_argument("--output-cycles", type=int, default=60e6)
     parser.add_argument("--shuffle", type=bool, default=True)
     parser.add_argument("--max-files", type=int, default=256)
-    parser.add_argument("--diffq", type=int, default=4)
+    parser.add_argument("--diffq", type=int, default=8)
     parser.add_argument("--learning-rate", type=float, default=1e-5)
     parser.add_argument(
         "--token-csv", type=str, default="/scratch/sidtableflip/tokens.csv"

@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 import logging
 import glob
 import os
@@ -7,6 +5,8 @@ import random
 import torch
 import numpy as np
 import pandas as pd
+
+TOKEN_KEYS = ["reg", "val", "diff"]
 
 
 class RegDataset(torch.utils.data.Dataset):
@@ -90,11 +90,7 @@ class RegDataset(torch.utils.data.Dataset):
         # 24 filter mode + vol
         df = self._squeeze_changes(df)
         df = self._quantize_diff(df)
-        df = df.loc[df.index.repeat(2)]
-        df.loc[::2, ["reg"]] = -1
-        m = df["reg"] == -1
-        df.loc[m, ["val"]] = df.loc[m, "diff"]
-        return df[["reg", "val"]]
+        return df[TOKEN_KEYS]
 
     def _load(self):
         random.seed(0)
@@ -111,13 +107,12 @@ class RegDataset(torch.utils.data.Dataset):
             df = self._downsample_df(self._read_df(name))
             pos += len(df)
             self.dfs.append(df)
-        self.tokens = pd.concat(self.dfs).drop_duplicates().sort_values(["reg", "val"])
+        self.tokens = pd.concat(self.dfs).drop_duplicates().sort_values(TOKEN_KEYS)
         self.reg_val_tokens = (
             pd.concat(self.dfs)[["reg", "val"]]
             .drop_duplicates()
             .sort_values(["reg", "val"])
         )
-        self.reg_val_tokens = self.reg_val_tokens[self.reg_val_tokens["reg"] != -1]
         self.tokens.reset_index(drop=True, inplace=True)
         self.tokens["n"] = self.tokens.index
         self.tokens = self.tokens.sort_values(["n"])
@@ -125,7 +120,7 @@ class RegDataset(torch.utils.data.Dataset):
             self.logger.info("writing %s", self.args.token_csv)
             self.tokens.to_csv(self.args.token_csv)
         self.dfs = pd.concat(
-            [df.merge(self.tokens, on=["reg", "val"], how="left") for df in self.dfs]
+            [df.merge(self.tokens, on=TOKEN_KEYS, how="left") for df in self.dfs]
         )
         self.dfs_n = torch.LongTensor(self.dfs["n"].values)
 

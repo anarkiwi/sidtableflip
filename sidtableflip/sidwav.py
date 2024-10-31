@@ -15,12 +15,10 @@ def write_samples(df, name, diffpad=8):
         # 50% pwm
         sid.write_register(3 + offset, 16)
     raw_samples = []
+    df["delay"] = df["diff"] * sid.clock_frequency / 1e6 / 1e6
     for row in df.itertuples():
-        if row.reg == -1:
-            secs = row.val * (sid.clock_frequency / 1e6) / 1e6
-            raw_samples.extend(sid.clock(timedelta(seconds=secs)))
-        else:
-            sid.write_register(row.reg, row.val)
+        raw_samples.extend(sid.clock(timedelta(seconds=row.delay)))
+        sid.write_register(row.reg, row.val)
     wavfile.write(
         name,
         int(sid.sampling_frequency),
