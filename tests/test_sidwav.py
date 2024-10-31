@@ -15,7 +15,7 @@ class TestSidwav(unittest.TestCase):
             test_df = pd.DataFrame(
                 [(1, 24, 0), (256, 24, 15)], columns=["diff", "reg", "val"]
             )
-            write_samples(test_df, test_wav_name, diffpad=8)
+            write_samples(test_df, test_wav_name)
             rate, data = scipy.io.wavfile.read(test_wav_name)
             self.assertEqual(rate, 48000)
             data = np.round(data, 2)
