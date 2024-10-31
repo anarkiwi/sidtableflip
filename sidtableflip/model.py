@@ -104,7 +104,7 @@ def get_model(dataset, args):
     torch.set_float32_matmul_precision(args.precision)
     model = MODEL_GETTERS[args.model](dataset, args)
     model.args = args
-    return torch.compile(model)
+    return torch.compile(model, mode="max-autotune-no-cudagraphs")
 
 
 def get_device():

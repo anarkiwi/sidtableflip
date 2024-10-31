@@ -4,7 +4,7 @@ from pyresidfp import SoundInterfaceDevice
 import numpy as np
 
 
-def write_samples(df, name, diffpad=8):
+def write_samples(df, name):
     sid = SoundInterfaceDevice()
     # max vol
     sid.write_register(24, 15)
