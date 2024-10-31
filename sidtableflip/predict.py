@@ -31,8 +31,7 @@ def generate(logger, dataset, model, device, prompt, args):
         prompt = roll(prompt.to("cpu"), -1)
         state = sample_next(predictions)
         token = dataset.tokens[dataset.tokens["n"] == state].iloc[0]
-        if token["reg"] == -1:
-            cycles += token["val"]
+        cycles += token["diff"]
         prompt[0][-1] = state
         states.append(state)
         progress = cycles / float(args.output_cycles) * 100
