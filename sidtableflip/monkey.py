@@ -13,9 +13,10 @@ class Monkey(LightningModule):
         x, y = train_batch
         outputs = self(x)
         outputs = outputs.view(-1, self.tok_embeddings.num_embeddings)
-        loss = self.loss_fn(outputs, y.contiguous().view(-1))
+        y_cont = y.contiguous().view(-1)
+        loss = self.loss_fn(outputs, y_cont)
         preds = torch.argmax(outputs, dim=1)
-        acc = (preds == y.contiguous().view(-1)).float().mean()
+        acc = (preds == y_cont).float().mean()
         self.log("train_loss", loss, on_epoch=False, on_step=True)
         self.log("train_acc", acc, on_epoch=False, on_step=True)
         return loss
