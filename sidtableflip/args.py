@@ -14,8 +14,8 @@ def add_args(parser):
         "--model_state", type=str, default="/scratch/sidtableflip/sidtableflip.pth"
     )
     parser.add_argument("--tb_logs", type=str, default="/scratch/sidtableflip/tb_logs")
-    parser.add_argument("--sequence-length", type=int, default=2048)
-    parser.add_argument("--max-sequence-length", type=int, default=2048 * 10)
+    parser.add_argument("--sequence-length", type=int, default=4096)
+    parser.add_argument("--max-sequence-length", type=int, default=4096 * 10)
     parser.add_argument("--max-epochs", type=int, default=10)
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument(
@@ -32,10 +32,10 @@ def add_args(parser):
     parser.add_argument(
         "--token-csv", type=str, default="/scratch/sidtableflip/tokens.csv"
     )
-    parser.add_argument("--layers", type=int, default=2)
-    parser.add_argument("--heads", type=int, default=2)
+    parser.add_argument("--layers", type=int, default=4)
+    parser.add_argument("--heads", type=int, default=4)
     parser.add_argument("--kv_heads", type=int, default=None)
-    parser.add_argument("--embed", type=int, default=128)
+    parser.add_argument("--embed", type=int, default=256)
     parser.add_argument("--intermediate", type=int, default=None)
     parser.add_argument("--norm_eps", type=float, default=1e-5)
     parser.add_argument("--rope_base", type=int, default=10000)
