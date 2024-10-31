@@ -14,10 +14,12 @@ class Monkey(LightningModule):
         outputs = self(x)
         outputs = outputs.view(-1, self.tok_embeddings.num_embeddings)
         loss = self.loss_fn(outputs, y.contiguous().view(-1))
-        self.log("train_loss", loss, on_epoch=False, on_step=True, prog_bar=True)
+        preds = torch.argmax(outputs, dim=1)
+        acc = (preds == y.contiguous().view(-1)).float().mean()
+        self.log("train_loss", loss, on_epoch=False, on_step=True)
+        self.log("train_acc", acc, on_epoch=False, on_step=True)
         return loss
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.args.learning_rate)
-        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1)
-        return [optimizer], [lr_scheduler]
+        return optimizer

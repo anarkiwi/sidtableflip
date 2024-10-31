@@ -55,17 +55,19 @@ def main():
     model.load_state_dict(best_model)
     model.eval()
 
-    # TODO: CLI prompt input.
-    random.seed(time.time())
-    start = random.randint(0, dataset.n_words)
+    if args.start_n is None:
+        random.seed(time.time())
+        start = random.randint(0, dataset.n_words)
+    else:
+        start = args.start_n
     logger.info("starting at %u / %u", start, dataset.n_words)
     prompt = dataset.dfs_n[start:][: args.sequence_length].unsqueeze(0)
     states = generate(logger, dataset, model, device, prompt, args)
 
     df = pd.DataFrame(states, columns=["n"]).merge(dataset.tokens, on="n", how="left")
+    write_samples(df, args.wav)
     if args.csv:
         df.to_csv(args.csv)
-    write_samples(df, args.wav)
 
 
 if __name__ == "__main__":

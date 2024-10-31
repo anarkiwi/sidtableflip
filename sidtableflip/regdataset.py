@@ -104,7 +104,13 @@ class RegDataset(torch.utils.data.Dataset):
             file = random.choice(globbed)
             files.append(file)
             globbed.remove(file)
-        self.dfs = [self._downsample_df(self._read_df(name)) for name in sorted(files)]
+        self.dfs = []
+        pos = 0
+        for name in sorted(files):
+            self.logger.info("%s begins at %u", name, pos)
+            df = self._downsample_df(self._read_df(name))
+            pos += len(df)
+            self.dfs.append(df)
         self.tokens = pd.concat(self.dfs).drop_duplicates().sort_values(["reg", "val"])
         self.reg_val_tokens = (
             pd.concat(self.dfs)[["reg", "val"]]

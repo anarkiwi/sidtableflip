@@ -23,12 +23,14 @@ class SaveCallback(pl.callbacks.Callback):
 
 def train(model, dataset, dataloader, args, logger):
     callback = SaveCallback(args, logger, model)
+    tb_logger = pl.loggers.TensorBoardLogger(args.tb_logs, name="sidtableflip")
     trainer = pl.Trainer(
         max_epochs=args.max_epochs,
         default_root_dir=os.path.dirname(args.model_state),
         precision=args.trainer_precision,
         callbacks=[callback],
         enable_checkpointing=False,
+        logger=tb_logger,
     )
     trainer.fit(model, dataloader)
     return model
