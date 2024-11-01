@@ -11,14 +11,13 @@ class Monkey(LightningModule):
 
     def training_step(self, train_batch, batch_idx):
         x, y = train_batch
-        outputs = self(x)
-        outputs = outputs.view(-1, self.tok_embeddings.num_embeddings)
         y_cont = y.contiguous().view(-1)
+        outputs = self(x).view(-1, self.tok_embeddings.num_embeddings)
         loss = self.loss_fn(outputs, y_cont)
         preds = torch.argmax(outputs, dim=1)
-        acc = (preds == y_cont).float().mean().detach().cpu().item()
-        self.log("train_loss", loss.detach().cpu().item(), on_epoch=False, on_step=True)
-        self.log("train_acc", acc, on_epoch=False, on_step=True)
+        acc = (preds == y_cont).float().mean()
+        self.log("train_loss", loss.detach(), on_epoch=False, on_step=True, prog_bar=True)
+        self.log("train_acc", acc.detach(), on_epoch=False, on_step=True, prog_bar=True)
         return loss
 
     def configure_optimizers(self):
