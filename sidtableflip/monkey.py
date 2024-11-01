@@ -9,6 +9,11 @@ class Monkey(LightningModule):
         self.loss_fn = CrossEntropyLoss()
         self.args = None
 
+    @torch.compiler.disable
+    def log_nocompile(self, loss, acc):
+        self.log("train_loss", loss, on_epoch=True, on_step=True, prog_bar=True)
+        self.log("train_acc", acc, on_epoch=True, on_step=True, prog_bar=True)
+
     def training_step(self, train_batch, batch_idx):
         x, y = train_batch
         y_cont = y.contiguous().view(-1)
@@ -16,8 +21,7 @@ class Monkey(LightningModule):
         loss = self.loss_fn(outputs, y_cont)
         preds = torch.argmax(outputs, dim=1)
         acc = (preds == y_cont).float().mean()
-        self.log("train_loss", loss.detach(), on_epoch=False, on_step=True, prog_bar=True)
-        self.log("train_acc", acc.detach(), on_epoch=False, on_step=True, prog_bar=True)
+        self.log_nocompile(loss, acc)
         return loss
 
     def configure_optimizers(self):
