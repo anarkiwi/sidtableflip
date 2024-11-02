@@ -28,7 +28,7 @@ def add_args(parser):
     parser.add_argument("--shuffle", type=bool, default=True)
     parser.add_argument("--max-files", type=int, default=256)
     parser.add_argument("--diffq", type=int, default=4)
-    parser.add_argument("--learning-rate", type=float, default=1e-5)
+    parser.add_argument("--learning-rate", type=float, default=2e-5)
     parser.add_argument(
         "--token-csv", type=str, default="/scratch/sidtableflip/tokens.csv"
     )
