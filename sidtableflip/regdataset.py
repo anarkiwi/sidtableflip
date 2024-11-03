@@ -107,12 +107,13 @@ class RegDataset(torch.utils.data.Dataset):
                 self.args.token_csv, dtype=pd.UInt64Dtype(), index_col=0
             )
         else:
-            globbed = list(glob.glob(self.args.reglogs))
             files = []
-            while len(files) < self.args.max_files and globbed:
-                file = random.choice(globbed)
-                files.append(file)
-                globbed.remove(file)
+            for reglogs in self.args.reglogs.split(","):
+                globbed = list(glob.glob(reglogs))
+                while len(files) < self.args.max_files and globbed:
+                    file = random.choice(globbed)
+                    files.append(file)
+                    globbed.remove(file)
             self.dfs = [
                 self._downsample_df(self._read_df(name)) for name in sorted(files)
             ]
@@ -177,5 +178,5 @@ def get_loader(args, dataset):
         shuffle=args.shuffle,
         pin_memory=True,
         batch_size=args.batch_size,
-        num_workers=os.cpu_count(),
+        num_workers=4,  # os.cpu_count(),
     )
