@@ -1,12 +1,10 @@
 import torch
-from torch.nn import CrossEntropyLoss
 from pytorch_lightning import LightningModule
 
 
 class Monkey(LightningModule):
     def __init__(self):
         super().__init__()
-        self.loss_fn = CrossEntropyLoss()
         self.args = None
         self.optimizer = None
 
@@ -19,7 +17,7 @@ class Monkey(LightningModule):
         x, y = train_batch
         y_cont = y.contiguous().view(-1)
         outputs = self(x).view(-1, self.tok_embeddings.num_embeddings)
-        loss = self.loss_fn(outputs, y_cont)
+        loss = torch.nn.functional.cross_entropy(outputs, y_cont)
         preds = torch.argmax(outputs, dim=1)
         acc = (preds == y_cont).float().mean()
         self.log_nocompile(loss, acc)

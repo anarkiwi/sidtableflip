@@ -50,7 +50,7 @@ def add_args(parser):
     parser.add_argument("--attn_dropout", type=float, default=0)
     parser.add_argument("--model", choices=list(MODEL_GETTERS.keys()), default="llama2")
     parser.add_argument(
-        "--precision", choices=["highest", "high", "medium"], default="medium"
+        "--precision", choices=["highest", "high", "medium"], default="high"
     )
     parser.add_argument("--trainer-precision", type=str, default="bf16-mixed")
     return parser
