@@ -19,29 +19,27 @@ class Predictor:
         self.model = model
         self.prompt = prompt.to(device)
 
-    # TODO: add variation rather than most probable
-    def sample_next(self, predictions):
-        probabilities = F.softmax(predictions[:, -1, :], dim=-1)
-        return int(torch.argmax(probabilities))
-
     def predict(self):
         for _ in range(self.args.sequence_length):
             with torch.no_grad():
-                predictions = self.model(self.prompt)
+                outputs = self.model(self.prompt).view(
+                    -1, self.model.tok_embeddings.num_embeddings
+                )
             self.prompt = torch.roll(self.prompt, -1)
-            state = self.sample_next(predictions)
+            state = torch.argmax(outputs, dim=1)[-1]
             self.prompt[0][-1] = state
-        return self.prompt.detach().squeeze(0).tolist()
+        return self.prompt.detach().squeeze(0)
 
 
 def state_df(states, dataset):
     return pd.DataFrame(states, columns=["n"]).merge(dataset.tokens, on="n", how="left")
 
 
-def generate(logger, dataset, model, device, prompt, args):
+def generate(logger, dataset, model, device, prompt, prompt_from, args):
     stats = []
     cycles = 0
     prompt_cycles = 0
+    from_offset = 0
     predictor = torch.compile(Predictor)(args, model, device, prompt)
 
     if args.include_prompt:
@@ -53,17 +51,25 @@ def generate(logger, dataset, model, device, prompt, args):
         )
 
     while cycles < args.output_cycles:
-        states.extend(predictor.predict())
+        new_states = predictor.predict()
+        prompt_compare = prompt_from[from_offset:][: args.sequence_length]
+        states.extend(new_states.tolist())
         df = state_df(states, dataset)
         cycles = df["diff"].sum() - prompt_cycles
         write_samples(df, args.wav)
         progress = cycles / float(args.output_cycles) * 100
+        acc = "unknown"
+        if prompt_compare.shape == new_states.shape:
+            acc = (new_states == prompt_compare).float().mean()
+            acc = "%2.2f" % acc
         logger.info(
-            "generated %9.u cycles %6.2f seconds %6.2f%%",
+            "generated %9.u cycles %6.2f seconds accuracy %s %6.2f%%",
             cycles,
             cycles * sidq(),
+            acc,
             progress,
         )
+        from_offset += args.sequence_length
 
     clock = df["diff"].cumsum()
     df = df[clock <= args.output_cycles]
@@ -94,7 +100,8 @@ def main():
         start = args.start_n
     logger.info("starting at %u / %u", start, dataset.n_words)
     prompt = dataset.dfs_n[start:][: args.sequence_length].unsqueeze(0).to(device)
-    generate(logger, dataset, model, device, prompt, args)
+    prompt_from = dataset.dfs_n[start:].to(device)
+    generate(logger, dataset, model, device, prompt, prompt_from, args)
 
 
 if __name__ == "__main__":
