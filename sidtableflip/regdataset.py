@@ -125,9 +125,37 @@ class RegDataset(torch.utils.data.Dataset):
             .drop_duplicates()
             .sort_values(["reg", "val"])
         )
-        self.dfs = pd.concat(
-            [df.merge(self.tokens, on=TOKEN_KEYS, how="left") for df in self.dfs]
-        )
+        self.dfs = pd.concat(self.dfs)
+        dfs = self.dfs.merge(self.tokens, on=TOKEN_KEYS, how="left")
+        missing_tokens = dfs[dfs["n"].isna()].drop_duplicates()[TOKEN_KEYS].copy()
+        if len(missing_tokens):
+            for row in missing_tokens.itertuples():
+                token_cond = (
+                    (self.dfs["reg"] == row.reg)
+                    & (self.dfs["val"] == row.val)
+                    & (self.dfs["diff"] == row.diff)
+                )
+                nodiffs = self.tokens[
+                    (self.tokens["reg"] == row.reg) & (self.tokens["val"] == row.val)
+                ]
+                if len(nodiffs) == 0:
+                    self.dfs = self.dfs[~token_cond]
+                    self.logger.info(
+                        "reg %u val %u has no token, dropping", row.reg, row.val
+                    )
+                    continue
+                diff2 = (nodiffs["diff"].astype(pd.Int64Dtype()) - row.diff).abs()
+                mindiff = nodiffs[diff2 == diff2.min()].iloc[0]["diff"]
+                self.dfs.loc[token_cond, ["diff"]] = mindiff
+                self.logger.info(
+                    "replacing reg %u val %u diff %u with diff %u",
+                    row.reg,
+                    row.val,
+                    row.diff,
+                    mindiff,
+                )
+            dfs = self.dfs.merge(self.tokens, on=TOKEN_KEYS, how="left")
+        self.dfs = dfs
         self.dfs_n = torch.LongTensor(self.dfs["n"].values)
 
     def __len__(self):

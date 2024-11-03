@@ -1,3 +1,4 @@
+from argparse import BooleanOptionalAction
 from model import MODEL_GETTERS
 
 
@@ -30,7 +31,8 @@ def add_args(parser):
         "--csv", type=str, default="/scratch/sidtableflip/sidtableflip.csv"
     )
     parser.add_argument("--output-cycles", type=int, default=60e6)
-    parser.add_argument("--shuffle", type=bool, default=True)
+    parser.add_argument("--shuffle", type=BooleanOptionalAction, default=True)
+    parser.add_argument("--include-prompt", type=BooleanOptionalAction, default=True)
     parser.add_argument("--max-files", type=int, default=256)
     parser.add_argument("--diffq", type=int, default=4)
     parser.add_argument("--learning-rate", type=float, default=2e-5)

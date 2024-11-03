@@ -39,16 +39,18 @@ def state_df(states, dataset):
 
 
 def generate(logger, dataset, model, device, prompt, args):
-    states = prompt.squeeze(0).tolist()
-    prompt_df = state_df(states, dataset)
-    prompt_cycles = prompt_df["diff"].sum()
-    logger.info(
-        "prompt lasts %u cycles %.2f seconds", prompt_cycles, prompt_cycles * sidq()
-    )
-    df = None
-    last_log = 0
+    stats = []
     cycles = 0
+    prompt_cycles = 0
     predictor = torch.compile(Predictor)(args, model, device, prompt)
+
+    if args.include_prompt:
+        states = prompt.squeeze(0).tolist()
+        prompt_df = state_df(states, dataset)
+        prompt_cycles = prompt_df["diff"].sum()
+        logger.info(
+            "prompt lasts %u cycles %.2f seconds", prompt_cycles, prompt_cycles * sidq()
+        )
 
     while cycles < args.output_cycles:
         states.extend(predictor.predict())
