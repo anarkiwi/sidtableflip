@@ -11,6 +11,11 @@ def add_args(parser):
         # default="/scratch/hvsc/C64Music/MUSICIANS/J/Jammer/Grid_Runner/1/Grid_Runner-1.dump.zst",
     )
     parser.add_argument(
+        "--reglog",
+        type=str,
+        default="",
+    )
+    parser.add_argument(
         "--model_state", type=str, default="/scratch/sidtableflip/sidtableflip.pth"
     )
     parser.add_argument("--tb_logs", type=str, default="/scratch/sidtableflip/tb_logs")
@@ -35,7 +40,7 @@ def add_args(parser):
     parser.add_argument("--layers", type=int, default=8)
     parser.add_argument("--heads", type=int, default=4)
     parser.add_argument("--kv_heads", type=int, default=None)
-    parser.add_argument("--embed", type=int, default=256)
+    parser.add_argument("--embed", type=int, default=128)
     parser.add_argument("--intermediate", type=int, default=None)
     parser.add_argument("--norm_eps", type=float, default=1e-5)
     parser.add_argument("--rope_base", type=int, default=10000)

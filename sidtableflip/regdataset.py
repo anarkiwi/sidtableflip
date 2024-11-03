@@ -92,33 +92,39 @@ class RegDataset(torch.utils.data.Dataset):
         df = self._quantize_diff(df)
         return df[TOKEN_KEYS]
 
+    def _make_tokens(self, dfs):
+        tokens = pd.concat(dfs).drop_duplicates().sort_values(TOKEN_KEYS)
+        tokens.reset_index(drop=True, inplace=True)
+        tokens["n"] = tokens.index
+        tokens = tokens.sort_values(["n"])
+        return tokens
+
     def _load(self):
         random.seed(0)
-        globbed = list(glob.glob(self.args.reglogs))
-        files = []
-        while len(files) < self.args.max_files and globbed:
-            file = random.choice(globbed)
-            files.append(file)
-            globbed.remove(file)
-        self.dfs = []
-        pos = 0
-        for name in sorted(files):
-            self.logger.info("%s begins at %u", name, pos)
-            df = self._downsample_df(self._read_df(name))
-            pos += len(df)
-            self.dfs.append(df)
-        self.tokens = pd.concat(self.dfs).drop_duplicates().sort_values(TOKEN_KEYS)
+        if self.args.reglog:
+            self.dfs = [self._downsample_df(self._read_df(self.args.reglog))]
+            self.tokens = pd.read_csv(
+                self.args.token_csv, dtype=pd.UInt64Dtype(), index_col=0
+            )
+        else:
+            globbed = list(glob.glob(self.args.reglogs))
+            files = []
+            while len(files) < self.args.max_files and globbed:
+                file = random.choice(globbed)
+                files.append(file)
+                globbed.remove(file)
+            self.dfs = [
+                self._downsample_df(self._read_df(name)) for name in sorted(files)
+            ]
+            self.tokens = self._make_tokens(self.dfs)
+            if self.args.token_csv:
+                self.logger.info("writing %s", self.args.token_csv)
+                self.tokens.to_csv(self.args.token_csv)
         self.reg_val_tokens = (
             pd.concat(self.dfs)[["reg", "val"]]
             .drop_duplicates()
             .sort_values(["reg", "val"])
         )
-        self.tokens.reset_index(drop=True, inplace=True)
-        self.tokens["n"] = self.tokens.index
-        self.tokens = self.tokens.sort_values(["n"])
-        if self.args.token_csv:
-            self.logger.info("writing %s", self.args.token_csv)
-            self.tokens.to_csv(self.args.token_csv)
         self.dfs = pd.concat(
             [df.merge(self.tokens, on=TOKEN_KEYS, how="left") for df in self.dfs]
         )

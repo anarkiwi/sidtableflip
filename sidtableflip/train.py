@@ -44,7 +44,7 @@ def main():
     logger = get_logger("INFO")
     dataset = RegDataset(args, logger=logger)
     dataloader = get_loader(args, dataset)
-    model = get_model(dataset, args)
+    model = get_model(dataset, args, mode="max-autotune")
     train(model, dataset, dataloader, args, logger)
 
 

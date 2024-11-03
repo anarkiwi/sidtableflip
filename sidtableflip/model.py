@@ -100,11 +100,11 @@ MODEL_GETTERS = {
 }
 
 
-def get_model(dataset, args):
+def get_model(dataset, args, mode=None):
     torch.set_float32_matmul_precision(args.precision)
     model = MODEL_GETTERS[args.model](dataset, args)
     model.args = args
-    return torch.compile(model, mode="max-autotune")
+    return torch.compile(model, mode=mode)
 
 
 def get_device():

@@ -10,6 +10,7 @@ from sidtableflip.regdataset import RegDataset
 
 class FakeArgs:
     def __init__(self, reglogs, sequence_length):
+        self.reglog = None
         self.reglogs = reglogs
         self.sequence_length = sequence_length
         self.max_files = 1

@@ -4,6 +4,11 @@ from pyresidfp import SoundInterfaceDevice
 import numpy as np
 
 
+def sidq():
+    sid = SoundInterfaceDevice()
+    return sid.clock_frequency / 1e6 / 1e6
+
+
 def write_samples(df, name):
     sid = SoundInterfaceDevice()
     # max vol
@@ -15,7 +20,7 @@ def write_samples(df, name):
         # 50% pwm
         sid.write_register(3 + offset, 16)
     raw_samples = []
-    df["delay"] = df["diff"] * (sid.clock_frequency / 1e6 / 1e6)
+    df["delay"] = df["diff"] * sidq()
     for row in df.itertuples():
         raw_samples.extend(sid.clock(timedelta(seconds=row.delay)))
         sid.write_register(row.reg, row.val)
