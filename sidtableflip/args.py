@@ -40,15 +40,15 @@ def add_args(parser):
         "--token-csv", type=str, default="/scratch/sidtableflip/tokens.csv"
     )
     parser.add_argument("--layers", type=int, default=4)
-    parser.add_argument("--heads", type=int, default=2)
+    parser.add_argument("--heads", type=int, default=4)
     parser.add_argument("--kv_heads", type=int, default=None)
-    parser.add_argument("--embed", type=int, default=128)
+    parser.add_argument("--embed", type=int, default=256)
     parser.add_argument("--intermediate", type=int, default=None)
     parser.add_argument("--norm_eps", type=float, default=1e-5)
     parser.add_argument("--rope_base", type=int, default=10000)
     parser.add_argument("--start_n", type=int, default=None)
     parser.add_argument("--attn_dropout", type=float, default=0)
-    parser.add_argument("--model", choices=list(MODEL_GETTERS.keys()), default="llama2")
+    parser.add_argument("--model", choices=list(MODEL_GETTERS.keys()), default="phi3")
     parser.add_argument(
         "--precision", choices=["highest", "high", "medium"], default="high"
     )
