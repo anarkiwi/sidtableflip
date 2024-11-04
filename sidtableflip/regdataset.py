@@ -67,7 +67,7 @@ class RegDataset(torch.utils.data.Dataset):
         return (df_diff["diff"].floordiv(diffq).clip(lower=1) * diffq).astype(np.uint32)
 
     def _quantize_diff(self, df):
-        df["diff"] = df["clock"].diff().fillna(0).astype(np.uint64)
+        df["diff"] = df["clock"].diff().shift(-1).fillna(0).astype(np.uint64)
         for diffq_pow in (2, 3, 4, 5):
             diffq = self.args.diffq**diffq_pow
             mask = df["diff"] > diffq

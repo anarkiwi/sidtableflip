@@ -100,7 +100,7 @@ def main():
         start = args.start_n
     logger.info("starting at %u / %u", start, dataset.n_words)
     prompt = dataset.dfs_n[start:][: args.sequence_length].unsqueeze(0).to(device)
-    prompt_from = dataset.dfs_n[start+1:].to(device)
+    prompt_from = dataset.dfs_n[start + 1 :].to(device)
     generate(logger, dataset, model, device, prompt, prompt_from, args)
 
 

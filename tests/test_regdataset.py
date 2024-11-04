@@ -62,8 +62,8 @@ class TestRegDatasetLoader(unittest.TestCase):
             compare_df = pd.DataFrame(
                 [
                     {"diff": 64, "reg": 1, "val": 1},
-                    {"diff": 64, "reg": 2, "val": 2},
-                    {"diff": 8192, "reg": 1, "val": 2},
+                    {"diff": 8192, "reg": 2, "val": 2},
+                    {"diff": 64, "reg": 1, "val": 2},
                 ],
                 dtype=np.uint32,
             )

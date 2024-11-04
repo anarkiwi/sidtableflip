@@ -22,8 +22,8 @@ def write_samples(df, name):
     raw_samples = []
     df["delay"] = df["diff"] * sidq()
     for row in df.itertuples():
-        raw_samples.extend(sid.clock(timedelta(seconds=row.delay)))
         sid.write_register(row.reg, row.val)
+        raw_samples.extend(sid.clock(timedelta(seconds=row.delay)))
     wavfile.write(
         name,
         int(sid.sampling_frequency),
