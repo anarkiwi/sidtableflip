@@ -17,7 +17,7 @@ class Predictor:
     def __init__(self, args, model, device, prompt):
         self.args = args
         self.model = model
-        self.prompt = prompt.to(device)
+        self.prompt = prompt.clone().to(device)
 
     def predict(self):
         for _ in range(self.args.sequence_length):
@@ -100,7 +100,7 @@ def main():
         start = args.start_n
     logger.info("starting at %u / %u", start, dataset.n_words)
     prompt = dataset.dfs_n[start:][: args.sequence_length].unsqueeze(0).to(device)
-    prompt_from = dataset.dfs_n[start:].to(device)
+    prompt_from = dataset.dfs_n[start+1:].to(device)
     generate(logger, dataset, model, device, prompt, prompt_from, args)
 
 
