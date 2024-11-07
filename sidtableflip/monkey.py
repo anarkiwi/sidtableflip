@@ -7,6 +7,7 @@ class Monkey(LightningModule):
         super().__init__()
         self.args = None
         self.optimizer = None
+        self.scheduler = None
 
     @torch.compiler.disable
     def log_nocompile(self, loss, acc):
@@ -27,4 +28,7 @@ class Monkey(LightningModule):
         self.optimizer = torch.optim.AdamW(
             self.parameters(), lr=self.args.learning_rate, fused=True
         )
-        return self.optimizer
+        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
+            self.optimizer, gamma=0.5
+        )
+        return [self.optimizer], [self.scheduler]
