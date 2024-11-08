@@ -36,7 +36,7 @@ def state_df(states, dataset):
 
 
 def generate(logger, dataset, model, device, prompt, prompt_from, args):
-    stats = []
+    states = []
     cycles = 0
     prompt_cycles = 0
     from_offset = 0
