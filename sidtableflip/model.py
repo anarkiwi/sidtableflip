@@ -100,7 +100,10 @@ MODEL_GETTERS = {
 }
 
 
-def get_model(dataset, args, mode=None):
+def get_model(dataset, args, mode=None, args_override=None):
+    if args_override:
+        for k, v in args_override.items():
+            setattr(args, k, v)
     torch.set_float32_matmul_precision(args.precision)
     model = MODEL_GETTERS[args.model](dataset, args)
     model.args = args

@@ -88,7 +88,7 @@ def main():
     logger = get_logger("INFO")
     dataset = RegDataset(args, logger=logger)
     device = get_device()
-    model = get_model(dataset, args).to(device)
+    model = get_model(dataset, args, args_override={"attn_dropout": 0}).to(device)
     best_model = torch.load(args.model_state, weights_only=True, map_location=device)[0]
     model.load_state_dict(best_model)
     model.eval()
