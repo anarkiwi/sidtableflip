@@ -1,6 +1,7 @@
 from datetime import timedelta
 from scipy.io import wavfile
 from pyresidfp import SoundInterfaceDevice
+from pyresidfp.sound_interface_device import ChipModel
 import numpy as np
 
 
@@ -10,7 +11,7 @@ def sidq():
 
 
 def write_samples(df, name):
-    sid = SoundInterfaceDevice()
+    sid = SoundInterfaceDevice(model=ChipModel.MOS8580)
     # max vol
     sid.write_register(24, 15)
     for v in range(3):
