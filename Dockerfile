@@ -4,7 +4,7 @@ RUN apt-get -yq update && apt-get install -yq python3-pip && pip install -r /roo
 COPY sidtableflip /sidtableflip
 COPY tests /tests
 WORKDIR /
-# RUN PYTHONPATH=. pytest -svvv /tests
+RUN PYTHONPATH=. pytest -svvv /tests
 RUN perl -pi -e "s/class TransformerDecoder\(nn.Module\):/from monkey import Monkey\nclass TransformerDecoder\(Monkey\):/" $(python3 -c "import torchtune.modules.transformer;print(torchtune.modules.transformer.__file__)")
 
 # docker build -f Dockerfile . -t anarkiwi/sidtableflip

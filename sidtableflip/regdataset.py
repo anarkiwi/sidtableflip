@@ -34,7 +34,7 @@ class RegDataset(torch.utils.data.Dataset):
                 "clock": np.uint64,
                 "chipno": np.uint8,
                 "reg": np.int16,
-                "val": np.uint32,
+                "val": np.uint8,
             },
         )
         assert df["reg"].min() >= 0
@@ -64,7 +64,7 @@ class RegDataset(torch.utils.data.Dataset):
         return reg_df.join(df)[["clock", "reg", "val"]].reset_index(drop=True)
 
     def _downsample_diff(self, df_diff, diffq):
-        return (df_diff["diff"].floordiv(diffq).clip(lower=1) * diffq).astype(np.uint32)
+        return (df_diff["diff"].floordiv(diffq).clip(lower=1) * diffq).astype(np.uint64)
 
     def _quantize_reg(self, df, lb):
         m = (df["reg"] == lb) | (df["reg"] == (lb + 1))
@@ -78,31 +78,24 @@ class RegDataset(torch.utils.data.Dataset):
         h_df["reg"] = int(lb)
         h_df["clock"] = h_df["clock"].floordiv(64) * int(64)
         h_df = h_df.drop(["hb", "lb"], axis=1)
-        h_df = h_df.sort_values(["clock"]).drop_duplicates(
-            subset=["clock"], keep="last"
-        )
+        h_df = h_df.drop_duplicates(subset=["clock"], keep="last")
         df = pd.concat([df, h_df]).sort_values(["clock"]).reset_index(drop=True)
         return df
 
-    def _quantize_diff(self, df, diffmin=8, diffmax=256):
-        for v in range(3):
-            v_offset = v * 7
-            for lb in (0, 2):
-                df = self._quantize_reg(df, lb + v_offset)
-
-        df["diff"] = df["clock"].diff().shift(-1).fillna(0).astype(pd.Int64Dtype())
+    def _quantize_longdiff(self, df, diffmin=8, diffmax=128):
         m = df["diff"] >= diffmax
         long_df = df[m].copy()
         df.loc[m, "diff"] = diffmin
-        long_df["reg"] = 255
+        long_df["reg"] = -1
         long_df["val"] = 0
         long_df["diff"] -= diffmax + (diffmax - diffmin)
-        df = (
-            pd.concat([df, long_df])
-            .sort_values(["clock", "reg"])
-            .reset_index(drop=True)
-        )
-        df.loc[df["reg"] == 255, "reg"] = -1
+        long_df["clock"] += diffmin
+        df = pd.concat([df, long_df]).sort_values(["clock"]).reset_index(drop=True)
+        return df
+
+    def _quantize_diff(self, df):
+        df["diff"] = df["clock"].diff().shift(-1).fillna(0).astype(pd.Int64Dtype())
+        df = self._quantize_longdiff(df)
         for diffq_pow in (2, 3, 4, 5):
             diffq = self.args.diffq**diffq_pow
             mask = df["diff"] > diffq

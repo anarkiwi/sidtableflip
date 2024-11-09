@@ -24,10 +24,10 @@ class TestRegDatasetLoader(unittest.TestCase):
             test_log_name = os.path.join(tmpdir, "log.txt")
             regdata = [
                 (1, 0, 2, 3),
-                (4, 0, 5, 6),
-                (7, 0, 8, 9),
-                (10, 0, 11, 12),
-                (7, 0, 13, 14),
+                (5, 0, 5, 6),
+                (12, 0, 8, 9),
+                (22, 0, 11, 12),
+                (29, 0, 13, 14),
             ]
             with open(test_log_name, "w") as log:
                 for reg_tuple in regdata:
@@ -46,7 +46,7 @@ class TestRegDatasetLoader(unittest.TestCase):
                     {"clock": 3, "reg": 1, "val": 1},  # dropped as no-op
                     {"clock": 8192 + 2, "reg": 1, "val": 2},
                 ],
-                dtype=np.uint32,
+                dtype=np.int64,
             )
             squeeze_df = loader._squeeze_changes(test_df)
             compare_df = pd.DataFrame(
@@ -55,20 +55,22 @@ class TestRegDatasetLoader(unittest.TestCase):
                     {"clock": 2, "reg": 2, "val": 2},
                     {"clock": 8192 + 2, "reg": 1, "val": 2},
                 ],
-                dtype=np.uint32,
+                dtype=np.int64,
             )
             self.assertTrue(compare_df.equals(squeeze_df), (compare_df, squeeze_df))
 
             compare_df = pd.DataFrame(
                 [
                     {"diff": 64, "reg": 1, "val": 1},
-                    {"diff": 8192, "reg": 2, "val": 2},
+                    {"diff": 64, "reg": 2, "val": 2},
+                    {"diff": 4096, "reg": -1, "val": 0},
                     {"diff": 64, "reg": 1, "val": 2},
                 ],
-                dtype=np.uint32,
+                dtype=np.int64,
             )
+            compare_df["diff"] = compare_df["diff"].astype(np.uint64)
             quantize_df = loader._quantize_diff(squeeze_df)[compare_df.columns]
-            self.assertTrue(compare_df.equals(quantize_df), quantize_df)
+            self.assertTrue(compare_df.equals(quantize_df), (quantize_df, compare_df))
 
             results = [(i.tolist(), j.tolist()) for i, j in loader]
             self.assertEqual(
