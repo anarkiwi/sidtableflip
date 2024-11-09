@@ -6,9 +6,9 @@ def add_args(parser):
     parser.add_argument(
         "--reglogs",
         type=str,
-        # default="/scratch/hvsc/C64Music/MUSICIANS/G/Goto80/*/*/*-1.dump.zst",
+        default="/scratch/hvsc/C64Music/MUSICIANS/G/Goto80/*/*/*-1.dump.zst",
         # default="/scratch/hvsc/C64Music/MUSICIANS/H/Hubbard_Rob/*/*/*-1.dump.zst",
-        default="/scratch/hvsc/C64Music/MUSICIANS/J/Jammer/Grid_Runner/1/Grid_Runner-1.dump.zst",
+        # default="/scratch/hvsc/C64Music/MUSICIANS/J/Jammer/Grid_Runner/1/Grid_Runner-1.dump.zst",
         # default="/scratch/tmp/goto80/Automatas.sid.dump.zst",
     )
     parser.add_argument(
@@ -39,7 +39,7 @@ def add_args(parser):
     parser.add_argument(
         "--token-csv", type=str, default="/scratch/sidtableflip/tokens.csv"
     )
-    parser.add_argument("--layers", type=int, default=2)
+    parser.add_argument("--layers", type=int, default=4)
     parser.add_argument("--heads", type=int, default=2)
     parser.add_argument("--kv_heads", type=int, default=None)
     parser.add_argument("--embed", type=int, default=128)
