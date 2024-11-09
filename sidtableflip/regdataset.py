@@ -67,6 +67,25 @@ class RegDataset(torch.utils.data.Dataset):
         return (df_diff["diff"].floordiv(diffq).clip(lower=1) * diffq).astype(np.uint32)
 
     def _quantize_diff(self, df, diffmin=8, diffmax=256):
+        for v in range(3):
+            v_offset = v * 7
+            for lb in (0, 2):
+                lb += v_offset
+                m = (df["reg"] == lb) | (df["reg"] == (lb + 1))
+                h_df = df[m].copy()
+                df = df[~m]
+                h_df["lb"] = h_df[h_df["reg"] == lb]["val"]
+                h_df["lb"] = h_df["lb"].ffill().fillna(0)
+                h_df["hb"] = h_df[h_df["reg"] == (lb + 1)]["val"] * 256
+                h_df["hb"] = h_df["hb"].ffill().fillna(0)
+                h_df["val"] = (h_df["hb"] + h_df["lb"]).astype(pd.UInt16Dtype())
+                h_df["reg"] = int(lb)
+                h_df["clock"] /= int(64)
+                h_df["clock"] *= int(64)
+                h_df = h_df.drop(["hb", "lb"], axis=1)
+                h_df = h_df.sort_values(["clock"]).drop_duplicates(keep="last")
+                df = pd.concat([df, h_df]).sort_values(["clock"]).reset_index(drop=True)
+
         df["diff"] = df["clock"].diff().shift(-1).fillna(0).astype(pd.Int64Dtype())
         m = df["diff"] >= diffmax
         long_df = df[m].copy()
