@@ -66,8 +66,20 @@ class RegDataset(torch.utils.data.Dataset):
     def _downsample_diff(self, df_diff, diffq):
         return (df_diff["diff"].floordiv(diffq).clip(lower=1) * diffq).astype(np.uint32)
 
-    def _quantize_diff(self, df):
-        df["diff"] = df["clock"].diff().shift(-1).fillna(0).astype(np.uint64)
+    def _quantize_diff(self, df, diffmin=8, diffmax=256):
+        df["diff"] = df["clock"].diff().shift(-1).fillna(0).astype(pd.Int64Dtype())
+        m = df["diff"] >= diffmax
+        long_df = df[m].copy()
+        df.loc[m, "diff"] = diffmin
+        long_df["reg"] = 255
+        long_df["val"] = 0
+        long_df["diff"] -= diffmax + (diffmax - diffmin)
+        df = (
+            pd.concat([df, long_df])
+            .sort_values(["clock", "reg"])
+            .reset_index(drop=True)
+        )
+        df.loc[df["reg"] == 255, "reg"] = -1
         for diffq_pow in (2, 3, 4, 5):
             diffq = self.args.diffq**diffq_pow
             mask = df["diff"] > diffq

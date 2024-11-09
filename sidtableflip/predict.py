@@ -57,6 +57,8 @@ def generate(logger, dataset, model, device, prompt, prompt_from, args):
         df = state_df(states, dataset)
         cycles = df["diff"].sum() - prompt_cycles
         write_samples(df, args.wav)
+        if args.csv:
+            df.to_csv(args.csv)
         progress = cycles / float(args.output_cycles) * 100
         acc = "unknown"
         if prompt_compare.shape == new_states.shape:
