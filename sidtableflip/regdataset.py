@@ -132,7 +132,7 @@ class RegDataset(torch.utils.data.Dataset):
         if self.args.reglog:
             self.dfs = [self._downsample_df(self._read_df(self.args.reglog))]
             self.tokens = pd.read_csv(
-                self.args.token_csv, dtype=pd.UInt64Dtype(), index_col=0
+                self.args.token_csv, dtype=pd.Int64Dtype(), index_col=0
             )
         else:
             files = []
