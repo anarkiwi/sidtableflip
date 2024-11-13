@@ -3,6 +3,7 @@ from scipy.io import wavfile
 from pyresidfp import SoundInterfaceDevice
 from pyresidfp.sound_interface_device import ChipModel
 import numpy as np
+from sidtableflip.regdataset import DELAY_REG
 
 
 def sidq():
@@ -23,7 +24,7 @@ def write_samples(df, name):
     raw_samples = []
     df["delay"] = df["diff"] * sidq()
     for row in df.itertuples():
-        if row.reg != -1:
+        if row.reg != DELAY_REG:
             val = row.val
             if val > 255:
                 sid.write_register(row.reg + 1, val >> 8)

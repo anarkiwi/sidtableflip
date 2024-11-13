@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 TOKEN_KEYS = ["reg", "val", "diff"]
+DELAY_REG = -1
 
 
 class RegDataset(torch.utils.data.Dataset):
@@ -93,13 +94,13 @@ class RegDataset(torch.utils.data.Dataset):
         m = df["diff"] >= diffmax
         long_df = df[m].copy()
         df.loc[m, "diff"] = diffmin
-        long_df["reg"] = -1
+        long_df["reg"] = DELAY_REG
         long_df["val"] = 0
         long_df["clock"] += diffmin
         df = pd.concat([df, long_df]).sort_values(["clock"]).reset_index(drop=True)
-        # move delay to -1
+        # move delay to DELAY_REG
         df["delaymarker"] = (
-            (df["reg"] == -1)
+            (df["reg"] == DELAY_REG)
             .astype(pd.Int64Dtype())
             .diff(periods=1)
             .astype(pd.Int64Dtype())
@@ -110,9 +111,9 @@ class RegDataset(torch.utils.data.Dataset):
         )
         df["markerdelay"] = df.groupby("delaymarker")["diff"].transform("sum")
         df["markercount"] = df.groupby("delaymarker")["diff"].transform("count")
-        df.loc[df["reg"] != -1, ["diff"]] = 0
+        df.loc[df["reg"] != DELAY_REG, ["diff"]] = 0
         df["diff"] = df["markerdelay"] - (df["markercount"] * diffmin)
-        df.loc[df["reg"] != -1, ["diff"]] = diffmin
+        df.loc[df["reg"] != DELAY_REG, ["diff"]] = diffmin
         df = df.drop(["clock", "delaymarker", "markerdelay", "markercount"], axis=1)
         return df
 
