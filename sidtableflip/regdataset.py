@@ -31,10 +31,10 @@ class RegDataset(torch.utils.data.Dataset):
             sep=" ",
             names=["clock", "chipno", "reg", "val"],
             dtype={
-                "clock": np.uint64,
-                "chipno": np.uint8,
-                "reg": np.int16,
-                "val": np.uint8,
+                "clock": pd.UInt64Dtype(),
+                "chipno": pd.UInt8Dtype(),
+                "reg": pd.Int8Dtype(),
+                "val": pd.UInt8Dtype(),
             },
         )
         assert df["reg"].min() >= 0
@@ -56,7 +56,10 @@ class RegDataset(torch.utils.data.Dataset):
     def _squeeze_changes(self, df):
         diff_cols = df.reg.unique()
         reg_df = (
-            df.pivot(columns="reg", values="val").ffill().fillna(0).astype(np.int16)
+            df.pivot(columns="reg", values="val")
+            .ffill()
+            .fillna(0)
+            .astype(pd.Int16Dtype())
         )
         reg_df = reg_df.loc[
             (reg_df[diff_cols].shift(fill_value=0) != reg_df[diff_cols]).any(axis=1)
@@ -64,7 +67,9 @@ class RegDataset(torch.utils.data.Dataset):
         return reg_df.join(df)[["clock", "reg", "val"]].reset_index(drop=True)
 
     def _downsample_diff(self, df_diff, diffq):
-        return (df_diff["diff"].floordiv(diffq).clip(lower=1) * diffq).astype(np.uint64)
+        return (df_diff["diff"].floordiv(diffq).clip(lower=1) * diffq).astype(
+            pd.UInt64Dtype()
+        )
 
     def _quantize_reg(self, df, lb):
         m = (df["reg"] == lb) | (df["reg"] == (lb + 1))
@@ -83,13 +88,13 @@ class RegDataset(torch.utils.data.Dataset):
         return df
 
     def _quantize_longdiff(self, df, diffmin=8, diffmax=128):
+        df["diff"] = df["clock"].diff().shift(-1).fillna(0).astype(pd.Int64Dtype())
         # add delay rows
         m = df["diff"] >= diffmax
         long_df = df[m].copy()
         df.loc[m, "diff"] = diffmin
         long_df["reg"] = -1
         long_df["val"] = 0
-        long_df["diff"] -= diffmax + (diffmax - diffmin)
         long_df["clock"] += diffmin
         df = pd.concat([df, long_df]).sort_values(["clock"]).reset_index(drop=True)
         # move delay to -1
@@ -106,13 +111,12 @@ class RegDataset(torch.utils.data.Dataset):
         df["markerdelay"] = df.groupby("delaymarker")["diff"].transform("sum")
         df["markercount"] = df.groupby("delaymarker")["diff"].transform("count")
         df.loc[df["reg"] != -1, ["diff"]] = 0
-        df["diff"] -= df["markercount"] * diffmin
+        df["diff"] = df["markerdelay"] - (df["markercount"] * diffmin)
         df.loc[df["reg"] != -1, ["diff"]] = diffmin
-        df = df.drop(["delaymarker", "markerdelay", "markercount"], axis=1)
+        df = df.drop(["clock", "delaymarker", "markerdelay", "markercount"], axis=1)
         return df
 
     def _quantize_diff(self, df):
-        df["diff"] = df["clock"].diff().shift(-1).fillna(0).astype(pd.Int64Dtype())
         df = self._quantize_longdiff(df)
         for diffq_pow in (2, 3, 4, 5):
             diffq = self.args.diffq**diffq_pow

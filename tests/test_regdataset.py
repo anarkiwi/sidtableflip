@@ -46,7 +46,7 @@ class TestRegDatasetLoader(unittest.TestCase):
                     {"clock": 3, "reg": 1, "val": 1},  # dropped as no-op
                     {"clock": 8192 + 2, "reg": 1, "val": 2},
                 ],
-                dtype=np.int64,
+                dtype=pd.Int64Dtype(),
             )
             squeeze_df = loader._squeeze_changes(test_df)
             compare_df = pd.DataFrame(
@@ -55,7 +55,7 @@ class TestRegDatasetLoader(unittest.TestCase):
                     {"clock": 2, "reg": 2, "val": 2},
                     {"clock": 8192 + 2, "reg": 1, "val": 2},
                 ],
-                dtype=np.int64,
+                dtype=pd.Int64Dtype(),
             )
             self.assertTrue(compare_df.equals(squeeze_df), (compare_df, squeeze_df))
 
@@ -66,9 +66,9 @@ class TestRegDatasetLoader(unittest.TestCase):
                     {"diff": 4096, "reg": -1, "val": 0},
                     {"diff": 64, "reg": 1, "val": 2},
                 ],
-                dtype=np.int64,
+                dtype=pd.Int64Dtype(),
             )
-            compare_df["diff"] = compare_df["diff"].astype(np.uint64)
+            compare_df["diff"] = compare_df["diff"].astype(pd.UInt64Dtype())
             quantize_df = loader._quantize_diff(squeeze_df)[compare_df.columns]
             self.assertTrue(compare_df.equals(quantize_df), (quantize_df, compare_df))
 
@@ -80,4 +80,35 @@ class TestRegDatasetLoader(unittest.TestCase):
             tokens = [tuple([int(i) for i in x]) for x in loader.tokens.values]
             self.assertEqual(
                 [(5, 6, 64, 0), (8, 9, 64, 1), (11, 12, 64, 2), (13, 14, 64, 3)], tokens
+            )
+
+            unquantized_df = pd.DataFrame(
+                [
+                    {"clock": 1000, "reg": 1, "val": 1},
+                    {"clock": 1016, "reg": 2, "val": 2},
+                    {"clock": 1032, "reg": 3, "val": 3},
+                    {"clock": 2000, "reg": 4, "val": 4},
+                    {"clock": 2016, "reg": 5, "val": 5},
+                    {"clock": 3000, "reg": 6, "val": 6},
+                ]
+            )
+            diffmin = 8
+            quantized_df = loader._quantize_longdiff(unquantized_df, diffmin=diffmin)
+            compare_df = pd.DataFrame(
+                [
+                    {"reg": 1, "val": 1, "diff": 8},
+                    {"reg": 2, "val": 2, "diff": 8},
+                    {"reg": 3, "val": 3, "diff": 8},
+                    {"reg": -1, "val": 0, "diff": 976},
+                    {"reg": 4, "val": 4, "diff": 8},
+                    {"reg": 5, "val": 5, "diff": 8},
+                    {"reg": -1, "val": 0, "diff": 984},
+                    {"reg": 6, "val": 6, "diff": 8},
+                ],
+                dtype=pd.Int64Dtype(),
+            )
+            self.assertTrue(quantized_df.astype(pd.Int64Dtype()).equals(compare_df))
+            self.assertEqual(
+                unquantized_df["clock"].diff().sum(),
+                quantized_df["diff"].sum() - diffmin,
             )
