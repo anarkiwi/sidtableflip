@@ -83,6 +83,7 @@ class RegDataset(torch.utils.data.Dataset):
         return df
 
     def _quantize_longdiff(self, df, diffmin=8, diffmax=128):
+        # add delay rows
         m = df["diff"] >= diffmax
         long_df = df[m].copy()
         df.loc[m, "diff"] = diffmin
@@ -91,6 +92,23 @@ class RegDataset(torch.utils.data.Dataset):
         long_df["diff"] -= diffmax + (diffmax - diffmin)
         long_df["clock"] += diffmin
         df = pd.concat([df, long_df]).sort_values(["clock"]).reset_index(drop=True)
+        # move delay to -1
+        df["delaymarker"] = (
+            (df["reg"] == -1)
+            .astype(pd.Int64Dtype())
+            .diff(periods=1)
+            .astype(pd.Int64Dtype())
+            .cumsum()
+            .cumsum()
+            .shift(1)
+            .fillna(0)
+        )
+        df["markerdelay"] = df.groupby("delaymarker")["diff"].transform("sum")
+        df["markercount"] = df.groupby("delaymarker")["diff"].transform("count")
+        df.loc[df["reg"] != -1, ["diff"]] = 0
+        df["diff"] -= df["markercount"] * diffmin
+        df.loc[df["reg"] != -1, ["diff"]] = diffmin
+        df = df.drop(["delaymarker", "markerdelay", "markercount"], axis=1)
         return df
 
     def _quantize_diff(self, df):

@@ -6,8 +6,8 @@ def add_args(parser):
     parser.add_argument(
         "--reglogs",
         type=str,
-        default="/scratch/hvsc/C64Music/MUSICIANS/G/Goto80/*/*/*-1.dump.zst",
-        # default="/scratch/hvsc/C64Music/MUSICIANS/H/Hubbard_Rob/*/*/*-1.dump.zst",
+        # default="/scratch/hvsc/C64Music/MUSICIANS/G/Goto80/*/*/*-1.dump.zst",
+        default="/scratch/hvsc/C64Music/MUSICIANS/H/Hubbard_Rob/*/*/*-1.dump.zst",
         # default="/scratch/hvsc/C64Music/MUSICIANS/J/Jammer/Grid_Runner/1/Grid_Runner-1.dump.zst",
         # default="/scratch/tmp/goto80/Automatas.sid.dump.zst",
     )
@@ -20,10 +20,10 @@ def add_args(parser):
         "--model_state", type=str, default="/scratch/sidtableflip/sidtableflip.pth"
     )
     parser.add_argument("--tb_logs", type=str, default="/scratch/sidtableflip/tb_logs")
-    parser.add_argument("--sequence-length", type=int, default=4096)
-    parser.add_argument("--max-sequence-length", type=int, default=10 * 4096)
+    parser.add_argument("--sequence-length", type=int, default=8192)
+    parser.add_argument("--max-sequence-length", type=int, default=8192)
     parser.add_argument("--max-epochs", type=int, default=20)
-    parser.add_argument("--batch-size", type=int, default=8)
+    parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument(
         "--wav", type=str, default="/scratch/sidtableflip/sidtableflip.wav"
     )
