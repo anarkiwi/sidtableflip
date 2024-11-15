@@ -5,6 +5,7 @@ import random
 import time
 import pandas as pd
 from torchtune.utils import get_logger
+from torchtune.generation._generation import generate
 import torch
 import torch.nn.functional as F
 from args import add_args
@@ -19,15 +20,12 @@ class Predictor:
         self.model = model
         self.prompt = prompt.clone().to(device)
 
+    @torch.inference_mode()
     def predict(self):
         for _ in range(self.args.sequence_length):
-            with torch.no_grad():
-                outputs = self.model(self.prompt).view(
-                    -1, self.model.tok_embeddings.num_embeddings
-                )
+            outputs, _logits = generate(self.model, self.prompt, max_generated_tokens=1)
             self.prompt = torch.roll(self.prompt, -1)
-            state = torch.argmax(outputs, dim=1)[-1]
-            self.prompt[0][-1] = state
+            self.prompt[0][-1] = outputs[0][-1]
         return self.prompt.detach().squeeze(0)
 
 
@@ -35,7 +33,7 @@ def state_df(states, dataset):
     return pd.DataFrame(states, columns=["n"]).merge(dataset.tokens, on="n", how="left")
 
 
-def generate(logger, dataset, model, device, prompt, prompt_from, args):
+def generate_sequence(logger, dataset, model, device, prompt, prompt_from, args):
     states = []
     cycles = 0
     prompt_cycles = 0
@@ -103,7 +101,7 @@ def main():
     logger.info("starting at %u / %u", start, dataset.n_words)
     prompt = dataset.dfs_n[start:][: args.sequence_length].unsqueeze(0).to(device)
     prompt_from = dataset.dfs_n[start + 1 :].to(device)
-    generate(logger, dataset, model, device, prompt, prompt_from, args)
+    generate_sequence(logger, dataset, model, device, prompt, prompt_from, args)
 
 
 if __name__ == "__main__":

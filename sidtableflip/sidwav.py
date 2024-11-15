@@ -3,7 +3,8 @@ from scipy.io import wavfile
 from pyresidfp import SoundInterfaceDevice
 from pyresidfp.sound_interface_device import ChipModel
 import numpy as np
-from sidtableflip.regdataset import DELAY_REG
+
+DELAY_REG = -1
 
 
 def sidq():
