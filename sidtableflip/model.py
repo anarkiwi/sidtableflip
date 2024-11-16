@@ -109,7 +109,10 @@ class Model(LightningModule):
         self.save_hyperparameters("args", "n_vocab")
         self.model = MODEL_GETTERS[args.model](n_vocab, args)
         self.optimizer = torch.optim.AdamW(
-            self.parameters(), lr=self.args.learning_rate, fused=True
+            self.parameters(),
+            lr=self.args.learning_rate,
+            fused=True,
+            weight_decay=1e-1,
         )
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
             self.optimizer, gamma=0.5
