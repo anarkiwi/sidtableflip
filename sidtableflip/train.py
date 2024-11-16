@@ -10,31 +10,19 @@ from args import add_args
 from model import get_model
 
 
-class SaveCallback(pl.callbacks.Callback):
-    def __init__(self, args, logger, model):
-        self.args = args
-        self.logger = logger
-        self.model = model
-
-    def on_train_epoch_end(self, trainer, pl_module):
-        self.logger.info("saving to %s", self.args.model_state)
-        state_dict = self.model.state_dict()
-        torch.save([state_dict], self.args.model_state)
-        torch.save([state_dict], self.args.model_state + f"{self.model.current_epoch}")
-
-
 def train(model, dataset, dataloader, args, logger):
-    callback = SaveCallback(args, logger, model)
     tb_logger = pl.loggers.TensorBoardLogger(args.tb_logs, "sidtableflip")
     trainer = pl.Trainer(
         max_epochs=args.max_epochs,
         default_root_dir=os.path.dirname(args.model_state),
         precision=args.trainer_precision,
-        callbacks=[callback],
-        enable_checkpointing=False,
+        enable_checkpointing=True,
         logger=tb_logger,
     )
-    trainer.fit(model, dataloader)
+    ckpt_path = None
+    if os.path.exists(args.model_state):
+        ckpt_path = args.model_state
+    trainer.fit(model, dataloader, ckpt_path=ckpt_path)
     return model
 
 

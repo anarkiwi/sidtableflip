@@ -9,7 +9,7 @@ from torchtune.generation._generation import generate
 import torch
 import torch.nn.functional as F
 from args import add_args
-from model import get_device, get_model
+from model import get_device, get_model, Model
 from regdataset import RegDataset
 from sidwav import write_samples, sidq
 
@@ -23,7 +23,9 @@ class Predictor:
     @torch.inference_mode()
     def predict(self):
         for _ in range(self.args.sequence_length):
-            outputs, _logits = generate(self.model, self.prompt, max_generated_tokens=1)
+            outputs, _logits = generate(
+                self.model.model, self.prompt, max_generated_tokens=1
+            )
             self.prompt = torch.roll(self.prompt, -1)
             self.prompt[0][-1] = outputs[0][-1]
         return self.prompt.detach().squeeze(0)
@@ -88,9 +90,9 @@ def main():
     logger = get_logger("INFO")
     dataset = RegDataset(args, logger=logger)
     device = get_device()
-    model = get_model(dataset, args, args_override={"attn_dropout": 0}, mode="max-autotune").to(device)
-    best_model = torch.load(args.model_state, weights_only=True, map_location=device)[0]
-    model.load_state_dict(best_model)
+    model = torch.compile(
+        Model.load_from_checkpoint(args.model_state), mode="max-autotune"
+    )
     model.eval()
 
     if args.start_n is None:

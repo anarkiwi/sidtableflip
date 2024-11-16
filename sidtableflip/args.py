@@ -6,9 +6,9 @@ def add_args(parser):
     parser.add_argument(
         "--reglogs",
         type=str,
-        default="/scratch/hvsc/C64Music/MUSICIANS/G/Goto80/*/*/*-1.dump.zst",
+        # default="/scratch/hvsc/C64Music/MUSICIANS/G/Goto80/*/*/*-1.dump.zst",
         # default="/scratch/hvsc/C64Music/MUSICIANS/H/Hubbard_Rob/*/*/*-1.dump.zst",
-        # default="/scratch/hvsc/C64Music/MUSICIANS/J/Jammer/Grid_Runner/1/Grid_Runner-1.dump.zst",
+        default="/scratch/hvsc/C64Music/MUSICIANS/J/Jammer/Grid_Runner/1/Grid_Runner-1.dump.zst",
     )
     parser.add_argument(
         "--reglog",
@@ -46,7 +46,7 @@ def add_args(parser):
     parser.add_argument("--norm_eps", type=float, default=1e-5)
     parser.add_argument("--rope_base", type=int, default=10000)
     parser.add_argument("--start_n", type=int, default=None)
-    parser.add_argument("--attn_dropout", type=float, default=0.2)
+    parser.add_argument("--attn_dropout", type=float, default=0)
     parser.add_argument("--model", choices=list(MODEL_GETTERS.keys()), default="phi3")
     parser.add_argument(
         "--precision", choices=["highest", "high", "medium"], default="medium"
