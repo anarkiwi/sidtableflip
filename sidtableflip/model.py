@@ -1,5 +1,4 @@
 import torch
-from torchmetrics import Accuracy
 from pytorch_lightning import LightningModule
 from torchtune.models.gemma._component_builders import gemma
 from torchtune.models.llama2._component_builders import llama2
@@ -118,7 +117,6 @@ class Model(LightningModule):
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
             self.optimizer, gamma=0.5
         )
-        self.accuracy = Accuracy(task="multilabel")
 
     @torch.compiler.disable
     def log_nocompile(self, loss, acc):
@@ -132,7 +130,7 @@ class Model(LightningModule):
         outputs = logits.view(-1, logits.size(-1))
         loss = torch.nn.functional.cross_entropy(outputs, y_cont)
         preds = torch.argmax(outputs, dim=1)
-        acc = self.accuracy(preds, y_cont)
+        acc = (preds == y_cont).float().mean()
         self.log_nocompile(loss, acc)
         return loss
 
