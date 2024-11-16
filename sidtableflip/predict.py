@@ -90,6 +90,7 @@ def main():
     logger = get_logger("INFO")
     dataset = RegDataset(args, logger=logger)
     device = get_device()
+    logger.info("loading %s", args.model_state)
     model = torch.compile(
         Model.load_from_checkpoint(args.model_state), mode="max-autotune"
     )
