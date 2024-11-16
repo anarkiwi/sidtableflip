@@ -125,12 +125,12 @@ class Model(LightningModule):
 
     def training_step(self, train_batch):
         x, y = train_batch
-        y_cont = y.view(-1)
+        y_cont = y.contiguous().view(-1)
         logits = self.model(x)
         outputs = logits.view(-1, logits.size(-1))
-        loss = torch.nn.functional.cross_entropy(outputs, y_cont)
         preds = torch.argmax(outputs, dim=1)
         acc = (preds == y_cont).float().mean()
+        loss = torch.nn.functional.cross_entropy(outputs, y_cont)
         self.log_nocompile(loss, acc)
         return loss
 
