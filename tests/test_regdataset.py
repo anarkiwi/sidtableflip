@@ -99,7 +99,7 @@ class TestRegDatasetLoader(unittest.TestCase):
             diffmin = 8
             quantized_df = loader._quantize_longdiff(
                 unquantized_df, diffmin=diffmin, diffmax=128
-            )
+            ).astype(pd.Int64Dtype())
             compare_df = pd.DataFrame(
                 [
                     {"reg": 0, "val": 256, "diff": 8},
@@ -114,6 +114,4 @@ class TestRegDatasetLoader(unittest.TestCase):
                 ],
                 dtype=pd.Int64Dtype(),
             )
-            self.assertTrue(
-                quantized_df.astype(pd.Int64Dtype()).equals(compare_df), quantized_df
-            )
+            self.assertTrue(quantized_df.equals(compare_df), quantized_df)

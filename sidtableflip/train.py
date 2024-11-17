@@ -3,14 +3,13 @@
 import argparse
 import os
 import pytorch_lightning as pl
-import torch
 from torchtune.utils import get_logger
 from regdataset import RegDataset, get_loader
 from args import add_args
 from model import get_model
 
 
-def train(model, dataset, dataloader, args, logger):
+def train(model, dataloader, args):
     tb_logger = pl.loggers.TensorBoardLogger(args.tb_logs, "sidtableflip")
     trainer = pl.Trainer(
         max_epochs=args.max_epochs,
@@ -33,7 +32,7 @@ def main():
     dataset = RegDataset(args, logger=logger)
     dataloader = get_loader(args, dataset)
     model = get_model(dataset, args, mode="max-autotune")
-    train(model, dataset, dataloader, args, logger)
+    train(model, dataloader, args)
 
 
 if __name__ == "__main__":

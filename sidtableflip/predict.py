@@ -3,13 +3,11 @@
 import argparse
 import glob
 import random
-import time
 import pandas as pd
 from torchtune.utils import get_logger
 import torch
-import torch.nn.functional as F
 from args import add_args
-from model import get_device, get_model, Model
+from model import get_device, Model
 from regdataset import RegDataset
 from sidwav import write_samples, sidq
 
@@ -92,9 +90,7 @@ def main():
     device = get_device()
     ckpt = args.model_state
     if not ckpt:
-        ckpts = sorted(
-            [f for f in glob.glob(f"{args.tb_logs}/**/*ckpt", recursive=True)]
-        )
+        ckpts = sorted(list(glob.glob(f"{args.tb_logs}/**/*ckpt", recursive=True)))
         ckpt = ckpts[-1]
     logger.info("loading %s", ckpt)
     model = torch.compile(Model.load_from_checkpoint(ckpt), mode="max-autotune")
