@@ -35,7 +35,7 @@ class RegDataset(torch.utils.data.Dataset):
                 "clock": pd.UInt64Dtype(),
                 "chipno": pd.UInt8Dtype(),
                 "reg": pd.Int8Dtype(),
-                "val": pd.UInt8Dtype(),
+                "val": pd.UInt16Dtype(),
             },
         )
         assert df["reg"].min() >= 0
@@ -72,7 +72,7 @@ class RegDataset(torch.utils.data.Dataset):
             pd.UInt64Dtype()
         )
 
-    def _quantize_reg(self, df, lb):
+    def _quantize_reg(self, df, lb, diffmax):
         m = (df["reg"] == lb) | (df["reg"] == (lb + 1))
         h_df = df[m].copy()
         df = df[~m]
@@ -82,13 +82,20 @@ class RegDataset(torch.utils.data.Dataset):
         h_df["hb"] = h_df["hb"].ffill().fillna(0)
         h_df["val"] = (h_df["hb"] + h_df["lb"]).astype(pd.UInt16Dtype())
         h_df["reg"] = int(lb)
-        h_df["clock"] = h_df["clock"].floordiv(64) * int(64)
+        h_df["clock"] = h_df["clock"].floordiv(diffmax) * int(diffmax)
         h_df = h_df.drop(["hb", "lb"], axis=1)
         h_df = h_df.drop_duplicates(subset=["clock"], keep="last")
         df = pd.concat([df, h_df]).sort_values(["clock"]).reset_index(drop=True)
         return df
 
     def _quantize_longdiff(self, df, diffmin=8, diffmax=128):
+        for v in range(3):
+           offset = v * 7
+           # frequency, PCM
+           for reg in (0, 2):
+               df = self._quantize_reg(df, reg + offset, diffmax)
+        # filter cutoff
+        df = self._quantize_reg(df, 22, diffmax)
         df["diff"] = df["clock"].diff().shift(-1).fillna(0).astype(pd.Int64Dtype())
         # add delay rows
         m = df["diff"] >= diffmax
@@ -151,7 +158,6 @@ class RegDataset(torch.utils.data.Dataset):
         return tokens
 
     def _load(self):
-        random.seed(0)
         if self.args.reglog:
             self.dfs = [self._downsample_df(self._read_df(self.args.reglog))]
             self.tokens = pd.read_csv(
@@ -159,12 +165,14 @@ class RegDataset(torch.utils.data.Dataset):
             )
         else:
             files = []
+            random.seed(0)
             for reglogs in self.args.reglogs.split(","):
                 globbed = list(glob.glob(reglogs))
                 while len(files) < self.args.max_files and globbed:
                     file = random.choice(globbed)
                     files.append(file)
                     globbed.remove(file)
+            random.seed()
             self.dfs = [
                 self._downsample_df(self._read_df(name)) for name in sorted(files)
             ]
