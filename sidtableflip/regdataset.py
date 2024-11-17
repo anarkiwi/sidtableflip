@@ -88,12 +88,12 @@ class RegDataset(torch.utils.data.Dataset):
         df = pd.concat([df, h_df]).sort_values(["clock"]).reset_index(drop=True)
         return df
 
-    def _quantize_longdiff(self, df, diffmin=8, diffmax=128):
+    def _quantize_longdiff(self, df, diffmin, diffmax):
         for v in range(3):
-           offset = v * 7
-           # frequency, PCM
-           for reg in (0, 2):
-               df = self._quantize_reg(df, reg + offset, diffmax)
+            offset = v * 7
+            # frequency, PCM
+            for reg in (0, 2):
+                df = self._quantize_reg(df, reg + offset, diffmax)
         # filter cutoff
         df = self._quantize_reg(df, 22, diffmax)
         df["diff"] = df["clock"].diff().shift(-1).fillna(0).astype(pd.Int64Dtype())
@@ -124,8 +124,8 @@ class RegDataset(torch.utils.data.Dataset):
         df = df.drop(["clock", "delaymarker", "markerdelay", "markercount"], axis=1)
         return df
 
-    def _quantize_diff(self, df):
-        df = self._quantize_longdiff(df)
+    def _quantize_diff(self, df, diffmin=8, diffmax=128):
+        df = self._quantize_longdiff(df, diffmin, diffmax)
         for diffq_pow in (2, 3, 4, 5):
             diffq = self.args.diffq**diffq_pow
             mask = df["diff"] > diffq
