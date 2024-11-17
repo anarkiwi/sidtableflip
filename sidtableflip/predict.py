@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
+import glob
 import random
 import time
 import pandas as pd
 from torchtune.utils import get_logger
-from torchtune.generation._generation import generate
 import torch
 import torch.nn.functional as F
 from args import add_args
@@ -23,11 +23,11 @@ class Predictor:
     @torch.inference_mode()
     def predict(self):
         for _ in range(self.args.sequence_length):
-            outputs, _logits = generate(
-                self.model.model, self.prompt, max_generated_tokens=1
-            )
+            logits = self.model.model(self.prompt)
+            outputs = logits.view(-1, logits.size(-1))
+            preds = torch.argmax(outputs, dim=1)
             self.prompt = torch.roll(self.prompt, -1)
-            self.prompt[0][-1] = outputs[0][-1]
+            self.prompt[0][-1] = preds[-1]
         return self.prompt.detach().squeeze(0)
 
 
@@ -90,14 +90,17 @@ def main():
     logger = get_logger("INFO")
     dataset = RegDataset(args, logger=logger)
     device = get_device()
-    logger.info("loading %s", args.model_state)
-    model = torch.compile(
-        Model.load_from_checkpoint(args.model_state), mode="max-autotune"
-    )
+    ckpt = args.model_state
+    if not ckpt:
+        ckpts = sorted(
+            [f for f in glob.glob(f"{args.tb_logs}/**/*ckpt", recursive=True)]
+        )
+        ckpt = ckpts[-1]
+    logger.info("loading %s", ckpt)
+    model = torch.compile(Model.load_from_checkpoint(ckpt), mode="max-autotune")
     model.eval()
 
     if args.start_n is None:
-        random.seed(time.time())
         start = random.randint(0, dataset.n_words)
     else:
         start = args.start_n
