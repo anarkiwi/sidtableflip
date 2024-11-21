@@ -21,7 +21,7 @@ def train(model, dataloader, args):
     ckpt_path = None
     if os.path.exists(args.model_state):
         ckpt_path = args.model_state
-    trainer.fit(model, dataloader, ckpt_path=ckpt_path)
+    trainer.fit(model, dataloader, dataloader, ckpt_path=ckpt_path)
     return model
 
 
@@ -31,7 +31,7 @@ def main():
     logger = get_logger("INFO")
     dataset = RegDataset(args, logger=logger)
     dataloader = get_loader(args, dataset)
-    model = get_model(dataset, args, mode="max-autotune")
+    model = get_model(dataset, args) # , mode="max-autotune")
     train(model, dataloader, args)
 
 

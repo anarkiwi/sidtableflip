@@ -125,7 +125,7 @@ class Model(LightningModule):
 
     def training_step(self, train_batch):
         x, y = train_batch
-        y_cont = y.contiguous().view(-1)
+        y_cont = y.view(-1)
         logits = self.model(x)
         outputs = logits.view(-1, logits.size(-1))
         preds = torch.argmax(outputs, dim=1)
@@ -133,6 +133,14 @@ class Model(LightningModule):
         loss = torch.nn.functional.cross_entropy(outputs, y_cont)
         self.log_nocompile(loss, acc)
         return loss
+
+    def validation_step(self, batch, batch_idx):
+        x, y = batch
+        y_cont = y.view(-1).clone()
+        logits = self.model(x)
+        outputs = logits.view(-1, logits.size(-1)).clone()
+        loss = torch.nn.functional.cross_entropy(outputs, y_cont)
+        self.log("val_loss", loss) 
 
     def configure_optimizers(self):
         return [self.optimizer], [self.scheduler]
