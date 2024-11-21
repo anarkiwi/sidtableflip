@@ -91,7 +91,12 @@ def main():
     device = get_device()
     ckpt = args.model_state
     if not ckpt:
-        ckpts = sorted([(os.path.getmtime(p), p) for p in glob.glob(f"{args.tb_logs}/**/*ckpt", recursive=True)])
+        ckpts = sorted(
+            [
+                (os.path.getmtime(p), p)
+                for p in glob.glob(f"{args.tb_logs}/**/*ckpt", recursive=True)
+            ]
+        )
         ckpt = ckpts[-1][1]
     logger.info("loading %s", ckpt)
     model = torch.compile(Model.load_from_checkpoint(ckpt), mode="max-autotune")
