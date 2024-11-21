@@ -37,7 +37,7 @@ def generate_sequence(logger, dataset, model, device, prompt, prompt_from, args)
     states = []
     cycles = 0
     prompt_cycles = 0
-    from_offset = 0
+    from_offset = args.sequence_length
     predictor = torch.compile(Predictor)(args, model, device, prompt)
 
     if args.include_prompt:
