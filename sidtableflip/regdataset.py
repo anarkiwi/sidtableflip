@@ -28,9 +28,11 @@ class RegDataset(torch.utils.data.Dataset):
         df = pd.read_csv(
             name,
             sep=" ",
-            names=["clock", "chipno", "reg", "val"],
+            names=["clock", "irq_diff", "nmi_diff", "chipno", "reg", "val"],
             dtype={
                 "clock": pd.UInt64Dtype(),
+                "irq_diff": pd.UInt64Dtype(),
+                "nmi_diff": pd.UInt64Dtype(),
                 "chipno": pd.UInt8Dtype(),
                 "reg": pd.Int8Dtype(),
                 "val": pd.UInt16Dtype(),
