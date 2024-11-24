@@ -19,7 +19,7 @@ def write_samples(df, name):
     for v in range(3):
         offset = v * 7
         # max sustain all voices
-        sid.write_register(4 + offset, 240)
+        sid.write_register(6 + offset, 240)
         # 50% pwm
         sid.write_register(3 + offset, 16)
     raw_samples = []

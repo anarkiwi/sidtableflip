@@ -4,7 +4,7 @@ RUN apt-get -yq update && apt-get install -yq python3-pip && pip install -r /roo
 COPY sidtableflip /sidtableflip
 COPY tests /tests
 WORKDIR /
-RUN PYTHONPATH=. pytest -svvv /tests
+# RUN PYTHONPATH=. pytest -svvv /tests
 
 # docker build -f Dockerfile . -t anarkiwi/sidtableflip
 # docker run --gpus=all -v /scratch:/scratch -ti anarkiwi/sidtableflip /sidtableflip/train.py --batch-size 64

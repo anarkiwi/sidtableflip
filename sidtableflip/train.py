@@ -21,7 +21,7 @@ def train(model, dataloader, args):
     ckpt_path = None
     if os.path.exists(args.model_state):
         ckpt_path = args.model_state
-    trainer.fit(model, dataloader, dataloader, ckpt_path=ckpt_path)
+    trainer.fit(model, dataloader, ckpt_path=ckpt_path)
     return model
 
 

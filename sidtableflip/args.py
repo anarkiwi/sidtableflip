@@ -9,7 +9,6 @@ def add_args(parser):
         # default="/scratch/hvsc/C64Music/MUSICIANS/G/Goto80/*/*/*-1.dump.zst",
         # default="/scratch/hvsc/C64Music/MUSICIANS/H/Hubbard_Rob/*/*/*-1.dump.zst",
         default="/scratch/hvsc/C64Music/MUSICIANS/J/Jammer/Grid_Runner/1/Grid_Runner-1.dump.zst",
-        # default="/scratch/tmp/goto80/Automatas.sid.dump.zst",
     )
     parser.add_argument(
         "--reglog",
@@ -22,8 +21,8 @@ def add_args(parser):
         default="",
     )
     parser.add_argument("--tb_logs", type=str, default="/scratch/sidtableflip/tb_logs")
-    parser.add_argument("--sequence-length", type=int, default=64)
-    parser.add_argument("--max-sequence-length", type=int, default=64)
+    parser.add_argument("--sequence-length", type=int, default=2048)
+    parser.add_argument("--max-sequence-length", type=int, default=2048)
     parser.add_argument("--max-epochs", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument(

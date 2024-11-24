@@ -134,14 +134,6 @@ class Model(LightningModule):
         self.log_nocompile(loss, acc)
         return loss
 
-    def validation_step(self, batch, batch_idx):
-        x, y = batch
-        y_cont = y.view(-1).clone()
-        logits = self.model(x)
-        outputs = logits.view(-1, logits.size(-1)).clone()
-        loss = torch.nn.functional.cross_entropy(outputs, y_cont)
-        self.log("val_loss", loss) 
-
     def configure_optimizers(self):
         return [self.optimizer], [self.scheduler]
 
