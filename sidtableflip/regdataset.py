@@ -105,7 +105,7 @@ class RegDataset(torch.utils.data.Dataset):
         for v in range(3):
             offset = v * 7
             # frequency, PCM
-            for reg, bits in ((0, 8), (2, 4)):
+            for reg in (0, 2):
                 df = self._quantize_reg(df, reg + offset, diffmax)
         # filter cutoff
         df = self._quantize_reg(df, 21, diffmax)
