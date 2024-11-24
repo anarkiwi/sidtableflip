@@ -82,8 +82,9 @@ class RegDataset(torch.utils.data.Dataset):
         h_df["hb"] = h_df["hb"].ffill().fillna(0)
         h_df["val"] = (h_df["hb"] + h_df["lb"]).astype(pd.UInt16Dtype())
         h_df["reg"] = int(lb)
-        h_df["clock"] = h_df["clock"].floordiv(diffmax) * int(diffmax)
-        h_df = h_df.drop(["hb", "lb"], axis=1)
+        h_df["diff"] = h_df["clock"].diff(-1).fillna(0).abs()
+        h_df = h_df[h_df["diff"] > diffmax]
+        h_df = h_df.drop(["hb", "lb", "diff"], axis=1)
         h_df = h_df.drop_duplicates(subset=["clock"], keep="last")
         df = pd.concat([df, h_df]).sort_values(["clock"]).reset_index(drop=True)
         return df
@@ -95,7 +96,7 @@ class RegDataset(torch.utils.data.Dataset):
             for reg in (0, 2):
                 df = self._quantize_reg(df, reg + offset, diffmax)
         # filter cutoff
-        df = self._quantize_reg(df, 22, diffmax)
+        df = self._quantize_reg(df, 21, diffmax)
         df["diff"] = df["clock"].diff().shift(-1).fillna(0).astype(pd.Int64Dtype())
         # add delay rows
         m = df["diff"] >= diffmax
@@ -134,14 +135,14 @@ class RegDataset(torch.utils.data.Dataset):
         return df
 
     def _downsample_df(self, df):
-        for v in range(3):
-            v_offset = v * 7
-            # keep high 4 bits, of PCM low
-            self._maskregbits(df, 2 + v_offset, 4)
-            # keep high 7 bits of freq low
-            # self._maskregbits(df, v_offset, 1)
+        # for v in range(3):
+        #    v_offset = v * 7
+        #    # keep high 4 bits, of PCM low
+        #    self._maskregbits(df, 2 + v_offset, 4)
+        #    # keep high 7 bits of freq low
+        #    # self._maskregbits(df, v_offset, 1)
         # discard low 4 bits of filter cutoff.
-        df = df[df["reg"] != 21].copy()
+        # df = df[df["reg"] != 21].copy()
         # keep high 4 bits of filter cutoff
         # self._maskregbits(df, 22, 4)
         # 23 filter res + route
