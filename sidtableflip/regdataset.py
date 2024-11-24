@@ -2,10 +2,20 @@ import logging
 import glob
 import random
 import torch
+import numpy as np
 import pandas as pd
 
 TOKEN_KEYS = ["reg", "val", "diff"]
 DELAY_REG = -1
+REG_BITSHIFT = {
+    0: 8,
+    2: 4,
+    7: 8,
+    9: 4,
+    14: 8,
+    16: 4,
+    21: 3,
+}
 
 
 class RegDataset(torch.utils.data.Dataset):
@@ -73,16 +83,18 @@ class RegDataset(torch.utils.data.Dataset):
         )
 
     def _quantize_reg(self, df, lb, diffmax):
+        bits = REG_BITSHIFT[lb]
         m = (df["reg"] == lb) | (df["reg"] == (lb + 1))
         h_df = df[m].copy()
         df = df[~m]
-        h_df["lb"] = h_df[h_df["reg"] == lb]["val"]
+        h_df["lb"] = h_df[h_df["reg"] == lb]["val"] & (2**bits - 1)
         h_df["lb"] = h_df["lb"].ffill().fillna(0)
-        h_df["hb"] = h_df[h_df["reg"] == (lb + 1)]["val"] * 256
+        h_df["hb"] = h_df[h_df["reg"] == (lb + 1)]["val"]
+        h_df["hb"] = np.left_shift(h_df["hb"], bits)
         h_df["hb"] = h_df["hb"].ffill().fillna(0)
         h_df["val"] = (h_df["hb"] + h_df["lb"]).astype(pd.UInt16Dtype())
         h_df["reg"] = int(lb)
-        h_df["diff"] = h_df["clock"].diff(-1).fillna(0).abs()
+        h_df["diff"] = h_df["clock"].astype(pd.Int64Dtype()).diff(-1).fillna(0).abs()
         h_df = h_df[h_df["diff"] > diffmax]
         h_df = h_df.drop(["hb", "lb", "diff"], axis=1)
         h_df = h_df.drop_duplicates(subset=["clock"], keep="last")
@@ -93,7 +105,7 @@ class RegDataset(torch.utils.data.Dataset):
         for v in range(3):
             offset = v * 7
             # frequency, PCM
-            for reg in (0, 2):
+            for reg, bits in ((0, 8), (2, 4)):
                 df = self._quantize_reg(df, reg + offset, diffmax)
         # filter cutoff
         df = self._quantize_reg(df, 21, diffmax)
