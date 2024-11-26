@@ -23,11 +23,11 @@ class TestRegDatasetLoader(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             test_log_name = os.path.join(tmpdir, "log.txt")
             regdata = [
-                (1, 0, 2, 3),
-                (5, 0, 5, 6),
-                (12, 0, 8, 9),
-                (22, 0, 11, 12),
-                (29, 0, 13, 14),
+                (1, 1, 1, 0, 2, 3),
+                (5, 2, 2, 0, 5, 6),
+                (12, 3, 3, 0, 8, 9),
+                (22, 4, 4, 0, 11, 12),
+                (29, 5, 5, 0, 13, 14),
             ]
             with open(test_log_name, "w") as log:
                 for reg_tuple in regdata:
@@ -61,14 +61,15 @@ class TestRegDatasetLoader(unittest.TestCase):
 
             compare_df = pd.DataFrame(
                 [
-                    {"diff": 64, "reg": 0, "val": 256},
+                    {"diff": 64, "reg": 1, "val": 1},
                     {"diff": 64, "reg": 2, "val": 2},
                     {"diff": 64, "reg": -1, "val": 0},
                     {"diff": 4096, "reg": -1, "val": 0},
-                    {"diff": 64, "reg": 0, "val": 512},
+                    {"diff": 64, "reg": 1, "val": 2},
                 ],
                 dtype=pd.Int64Dtype(),
             )
+
             compare_df["diff"] = compare_df["diff"].astype(pd.UInt64Dtype())
             quantize_df = loader._quantize_diff(squeeze_df, diffmax=1)[
                 compare_df.columns
@@ -77,12 +78,18 @@ class TestRegDatasetLoader(unittest.TestCase):
 
             results = [(i.tolist(), j.tolist()) for i, j in loader]
             self.assertEqual(
-                [([1, 0], [0, 2]), ([0, 2], [2, 3])],
+                [([0, 1], [1, 2]), ([1, 2], [2, 3]), ([2, 3], [3, 4])],
                 results,
             )
             tokens = [tuple([int(i) for i in x]) for x in loader.tokens.values]
             self.assertEqual(
-                [(5, 6, 64, 0), (7, 2304, 64, 1), (11, 12, 64, 2), (13, 14, 64, 3)],
+                [
+                    (2, 3, 64, 0),
+                    (5, 6, 64, 1),
+                    (8, 9, 64, 2),
+                    (11, 12, 64, 3),
+                    (13, 14, 64, 4),
+                ],
                 tokens,
             )
 
@@ -102,11 +109,10 @@ class TestRegDatasetLoader(unittest.TestCase):
             ).astype(pd.Int64Dtype())
             compare_df = pd.DataFrame(
                 [
-                    {"reg": 0, "val": 256, "diff": 8},
+                    {"reg": 1, "val": 1, "diff": 8},
                     {"reg": 2, "val": 2, "diff": 8},
-                    {"reg": -1, "val": 0, "diff": 112},
-                    {"reg": 2, "val": 770, "diff": 8},
-                    {"reg": -1, "val": 0, "diff": 968},
+                    {"reg": 3, "val": 3, "diff": 8},
+                    {"reg": -1, "val": 0, "diff": 976},
                     {"reg": 4, "val": 4, "diff": 8},
                     {"reg": 5, "val": 5, "diff": 8},
                     {"reg": -1, "val": 0, "diff": 984},
@@ -114,4 +120,5 @@ class TestRegDatasetLoader(unittest.TestCase):
                 ],
                 dtype=pd.Int64Dtype(),
             )
+
             self.assertTrue(quantized_df.equals(compare_df), quantized_df)

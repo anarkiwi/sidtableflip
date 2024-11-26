@@ -109,7 +109,11 @@ def main():
         )
         ckpt = ckpts[-1][1]
     logger.info("loading %s", ckpt)
-    model = torch.compile(Model.load_from_checkpoint(ckpt), mode="max-autotune")
+    model = torch.compile(
+        # pylint: disable=no-value-for-parameter
+        Model.load_from_checkpoint(ckpt),
+        mode="max-autotune",
+    )
     model.eval()
 
     if args.start_n is None:
