@@ -25,7 +25,7 @@ def add_args(parser):
     parser.add_argument("--sequence-length", type=int, default=4096)
     parser.add_argument("--max-sequence-length", type=int, default=4096)
     parser.add_argument("--max-epochs", type=int, default=20)
-    parser.add_argument("--batch-size", type=int, default=32)
+    parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument(
         "--wav", type=str, default="/scratch/sidtableflip/sidtableflip.wav"
     )
