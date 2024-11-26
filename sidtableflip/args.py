@@ -6,10 +6,10 @@ def add_args(parser):
     parser.add_argument(
         "--reglogs",
         type=str,
-        # default="/scratch/hvsc/C64Music/MUSICIANS/G/Goto80/*/*/*-1.dump.zst",
+        default="/scratch/hvsc/C64Music/MUSICIANS/G/Goto80/*/*/*-1.dump.zst",
         # default="/scratch/hvsc/C64Music/MUSICIANS/G/Goto80/Automatas/1/Automatas-1.dump.zst",
         # default="/scratch/hvsc/C64Music/MUSICIANS/H/Hubbard_Rob/*/*/*-1.dump.zst",
-        default="/scratch/hvsc/C64Music/MUSICIANS/J/Jammer/Grid_Runner/1/Grid_Runner-1.dump.zst",
+        # default="/scratch/hvsc/C64Music/MUSICIANS/J/Jammer/Grid_Runner/1/Grid_Runner-1.dump.zst",
     )
     parser.add_argument(
         "--reglog",
