@@ -130,7 +130,6 @@ class Model(LightningModule):
         y_cont = y.view(-1)
         logits = self.model(x)
         outputs = logits.view(-1, logits.size(-1))
-        preds = outputs.softmax(dim=-1)
         acc = torchmetrics.functional.classification.multiclass_accuracy(
             outputs,
             y_cont,
