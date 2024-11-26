@@ -5,6 +5,7 @@ from torchtune.models.llama2._component_builders import llama2
 from torchtune.models.mistral._component_builders import mistral
 from torchtune.models.phi3._component_builders import phi3
 from torchtune.models.qwen2._component_builders import qwen2
+import torchmetrics
 
 
 def get_gemma(n_vocab, args):
@@ -117,6 +118,7 @@ class Model(LightningModule):
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
             self.optimizer, gamma=0.5
         )
+        self.train_acc = torchmetrics.Accuracy("multiclass", num_classes=n_vocab)
 
     @torch.compiler.disable
     def log_nocompile(self, loss, acc):
@@ -128,9 +130,8 @@ class Model(LightningModule):
         y_cont = y.view(-1)
         logits = self.model(x)
         outputs = logits.view(-1, logits.size(-1))
-        preds = torch.argmax(outputs, dim=1)
-        acc = (preds == y_cont).float().mean()
         loss = torch.nn.functional.cross_entropy(outputs, y_cont)
+        self.train_acc(outputs.softmax(dim=-1), y_cont)
         self.log_nocompile(loss, acc)
         return loss
 
