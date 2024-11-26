@@ -41,8 +41,8 @@ def add_args(parser):
     parser.add_argument(
         "--token-csv", type=str, default="/scratch/sidtableflip/tokens.csv"
     )
-    parser.add_argument("--layers", type=int, default=4)
-    parser.add_argument("--heads", type=int, default=4)
+    parser.add_argument("--layers", type=int, default=2)
+    parser.add_argument("--heads", type=int, default=2)
     parser.add_argument("--kv_heads", type=int, default=None)
     parser.add_argument("--embed", type=int, default=256)
     parser.add_argument("--intermediate", type=int, default=None)

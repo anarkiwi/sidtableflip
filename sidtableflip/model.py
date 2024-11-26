@@ -118,6 +118,7 @@ class Model(LightningModule):
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
             self.optimizer, gamma=0.5
         )
+        self.train_acc = torchmetrics.Accuracy("multiclass", num_classes=n_vocab)
 
     @torch.compiler.disable
     def log_nocompile(self, loss, acc):
