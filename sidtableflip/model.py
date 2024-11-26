@@ -5,6 +5,7 @@ from torchtune.models.llama2._component_builders import llama2
 from torchtune.models.mistral._component_builders import mistral
 from torchtune.models.phi3._component_builders import phi3
 from torchtune.models.qwen2._component_builders import qwen2
+import torchmetrics
 
 
 def get_gemma(n_vocab, args):
@@ -128,8 +129,13 @@ class Model(LightningModule):
         y_cont = y.view(-1)
         logits = self.model(x)
         outputs = logits.view(-1, logits.size(-1))
-        preds = torch.argmax(outputs, dim=1)
-        acc = (preds == y_cont).float().mean()
+        preds = outputs.softmax(dim=-1)
+        acc = torchmetrics.functional.classification.multiclass_accuracy(
+            outputs,
+            y_cont,
+            self.n_vocab,
+            validate_args=False,
+        )
         loss = torch.nn.functional.cross_entropy(outputs, y_cont)
         self.log_nocompile(loss, acc)
         return loss

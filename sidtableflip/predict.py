@@ -7,6 +7,7 @@ import random
 import pandas as pd
 from torchtune.utils import get_logger
 import torch
+import torchmetrics
 from args import add_args
 from model import get_device, Model
 from regdataset import RegDataset
@@ -65,7 +66,12 @@ def generate_sequence(logger, dataset, model, device, prompt, prompt_from, args)
         progress = cycles / float(args.output_cycles) * 100
         acc = "unknown"
         if prompt_compare.shape == new_states.shape:
-            acc = (new_states == prompt_compare).float().mean()
+            acc = torchmetrics.functional.classification.multiclass_accuracy(
+                new_states,
+                prompt_compare,
+                dataset.n_vocab,
+                validate_args=False,
+            )
             acc = "%2.2f" % acc
         logger.info(
             "generated %9.u cycles %6.2f seconds accuracy %s %6.2f%%",
