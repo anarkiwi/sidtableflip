@@ -20,13 +20,17 @@ class Predictor:
         self.prompt = prompt.clone().to(device)
 
     @torch.inference_mode()
-    def predict(self):
+    def predict(self, temperature=1.0, top_k=None):
         for _ in range(self.args.sequence_length):
             logits = self.model.model(self.prompt)
-            outputs = logits.view(-1, logits.size(-1))
-            preds = torch.argmax(outputs, dim=1)
+            logits = logits[:, -1, :] / temperature
+            if top_k is not None:
+                v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
+                logits[logits < v[:, [-1]]] = -float("Inf")
+            probs = torch.nn.functional.softmax(logits, dim=-1)
             self.prompt = torch.roll(self.prompt, -1)
-            self.prompt[0][-1] = preds[-1]
+            self.prompt[0][-1] = torch.multinomial(probs, num_samples=1)
+
         return self.prompt.detach().squeeze(0)
 
 

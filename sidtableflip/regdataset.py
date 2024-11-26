@@ -7,15 +7,6 @@ import pandas as pd
 
 TOKEN_KEYS = ["reg", "val", "diff"]
 DELAY_REG = -1
-REG_BITSHIFT = {
-    0: (8, 65535),
-    2: (8, (2**12 - 1) - (2**4-1)),
-    7: (8, 65535),
-    9: (8, (2**12 - 1) - (2**4-1)),
-    14: (8, 65535),
-    16: (8, (2**12 - 1) - (2**4-1)),
-    21: (3, (2**11 - 1) - (2**3-1)),
-}
 
 
 class RegDataset(torch.utils.data.Dataset):
@@ -52,7 +43,6 @@ class RegDataset(torch.utils.data.Dataset):
         # keep only chipno 0
         df = df[df["chipno"] == 0]
         df = df[["clock", "reg", "val"]]
-        print(df[df.reg == 3]["val"].unique())
         return df
 
     def _maskreg(self, df, reg, valmask):
@@ -83,33 +73,7 @@ class RegDataset(torch.utils.data.Dataset):
             pd.UInt64Dtype()
         )
 
-    def _quantize_reg(self, df, lb, diffmax):
-        bits, mask = REG_BITSHIFT[lb]
-        m = (df["reg"] == lb) | (df["reg"] == (lb + 1))
-        h_df = df[m].copy()
-        df = df[~m]
-        h_df["lb"] = h_df[h_df["reg"] == lb]["val"] & (2**bits - 1)
-        h_df["lb"] = h_df["lb"].ffill().fillna(0)
-        h_df["hb"] = h_df[h_df["reg"] == (lb + 1)]["val"]
-        h_df["hb"] = np.left_shift(h_df["hb"], bits)
-        h_df["hb"] = h_df["hb"].ffill().fillna(0)
-        h_df["val"] = (h_df["hb"] + h_df["lb"]).astype(pd.UInt16Dtype()) & mask
-        h_df["reg"] = int(lb)
-        h_df["diff"] = h_df["clock"].astype(pd.Int64Dtype()).diff(-1).fillna(0).abs()
-        h_df = h_df[h_df["diff"] > diffmax]
-        h_df = h_df.drop(["hb", "lb", "diff"], axis=1)
-        h_df = h_df.drop_duplicates(subset=["clock"], keep="last")
-        df = pd.concat([df, h_df]).sort_values(["clock"]).reset_index(drop=True)
-        return df
-
     def _quantize_longdiff(self, df, diffmin, diffmax):
-        for v in range(3):
-            offset = v * 7
-            # frequency, PCM
-            for reg in (0, 2):
-                df = self._quantize_reg(df, reg + offset, diffmax)
-        # filter cutoff
-        df = self._quantize_reg(df, 21, diffmax)
         df["diff"] = df["clock"].diff().shift(-1).fillna(0).astype(pd.Int64Dtype())
         # add delay rows
         m = df["diff"] >= diffmax
@@ -148,18 +112,6 @@ class RegDataset(torch.utils.data.Dataset):
         return df
 
     def _downsample_df(self, df):
-        # for v in range(3):
-        #    v_offset = v * 7
-        #    # keep high 4 bits, of PCM low
-        #    self._maskregbits(df, 2 + v_offset, 4)
-        #    # keep high 7 bits of freq low
-        #    # self._maskregbits(df, v_offset, 1)
-        # discard low 4 bits of filter cutoff.
-        # df = df[df["reg"] != 21].copy()
-        # keep high 4 bits of filter cutoff
-        # self._maskregbits(df, 22, 4)
-        # 23 filter res + route
-        # 24 filter mode + vol
         df = self._squeeze_changes(df)
         df = self._quantize_diff(df)
         return df[TOKEN_KEYS]

@@ -5,15 +5,6 @@ from pyresidfp.sound_interface_device import ChipModel
 import numpy as np
 
 DELAY_REG = -1
-REG_BITSHIFT = {
-    0: 8,
-    2: 4,
-    7: 8,
-    9: 4,
-    14: 8,
-    16: 4,
-    21: 3,
-}
 
 
 def sidq():
@@ -36,14 +27,7 @@ def write_samples(df, name):
     for row in df.itertuples():
         if row.reg != DELAY_REG:
             val = row.val
-            bits = REG_BITSHIFT.get(row.reg, None)
-            if bits is None:
-                sid.write_register(row.reg, val)
-            else:
-                lo = val & 2**bits - 1
-                hi = val >> bits
-                sid.write_register(row.reg, lo)
-                sid.write_register(row.reg + 1, hi)
+            sid.write_register(row.reg, val)
         raw_samples.extend(sid.clock(timedelta(seconds=row.delay)))
     wavfile.write(
         name,
