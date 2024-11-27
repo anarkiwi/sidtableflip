@@ -109,7 +109,8 @@ class TestRegDatasetLoader(unittest.TestCase):
                 {"clock": 64, "reg": 2, "val": 1},
                 {"clock": 80, "reg": 2, "val": 2},
                 {"clock": 128, "reg": 1, "val": 2},
-            ]
+            ],
+            dtype=pd.UInt64Dtype(),
         )
         combine_df = pd.DataFrame(
             [
@@ -118,10 +119,30 @@ class TestRegDatasetLoader(unittest.TestCase):
                 {"clock": 80, "reg": 1, "val": 513},
                 {"clock": 128, "reg": 1, "val": 514},
             ],
-            dtype=pd.Int64Dtype(),
+            dtype=pd.UInt64Dtype(),
         )
         self.assertTrue(
             combine_df.equals(
-                loader._combine_reg(test_df, 1, 16).astype(pd.Int64Dtype())
+                loader._combine_reg(test_df, 1, 16).astype(pd.UInt64Dtype())
             )
         )
+
+    def test_combine_vreg(self):
+        loader = RegDataset(FakeArgs())
+        test_df = pd.DataFrame(
+            [
+                {"clock": 0, "reg": 0, "val": 1},
+                {"clock": 64, "reg": 2, "val": 2},
+                {"clock": 80, "reg": 4, "val": 4},
+            ],
+            dtype=pd.UInt64Dtype(),
+        )
+        combine_df = pd.DataFrame(
+            [
+                {"clock": 0, "reg": 0, "val": 1},
+                {"clock": 64, "reg": 0, "val": (2 << (2 * 8)) + 1},
+                {"clock": 80, "reg": 0, "val": (2 << (2 * 8)) + 1 + (4 << (4 * 8))},
+            ],
+            dtype=pd.UInt64Dtype(),
+        )
+        self.assertTrue(combine_df.equals(loader._combine_vreg(test_df, 0)))

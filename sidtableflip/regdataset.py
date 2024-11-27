@@ -35,7 +35,7 @@ class RegDataset(torch.utils.data.Dataset):
             },
         )
         assert df["reg"].min() >= 0
-        df["irq"] = df["clock"] - df["irq_diff"]
+        df["irq"] = df["clock"].astype(pd.Int64Dtype()) - df["irq_diff"]
         # keep only chipno 0
         df = df[df["chipno"] == 0]
         df = df[["clock", "reg", "val"]]
@@ -71,22 +71,55 @@ class RegDataset(torch.utils.data.Dataset):
         ]
         return reg_df.join(df)[["clock", "reg", "val"]].reset_index(drop=True)
 
+    def _combine_val(self, reg_df, reg, reg_range):
+        origcols = reg_df.columns
+        for i in range(reg_range):
+            reg_df[str(i)] = reg_df[reg_df["reg"] == (reg + i)]["val"]
+            reg_df[str(i)] = reg_df[str(i)].ffill().fillna(0)
+            reg_df[str(i)] = np.left_shift(reg_df[str(i)].values, int(8 * i))
+        reg_df.loc[:, "val"] = 0
+        reg_df.loc[:, "reg"] = reg
+        for i in range(reg_range):
+            reg_df["val"] = reg_df["val"].astype(pd.UInt64Dtype()) + reg_df[str(i)]
+        return reg_df[origcols]
+
     def _combine_reg(self, df, reg, diffmax=128):
         origcols = df.columns
         cond = (df["reg"] == reg) | (df["reg"] == (reg + 1))
         reg_df = df[cond].copy()
         df = df[~cond]
-        reg_df["lo"] = reg_df[reg_df["reg"] == reg]["val"]
-        reg_df["lo"] = reg_df["lo"].ffill().fillna(0).astype(pd.UInt16Dtype())
-        reg_df["hi"] = reg_df[reg_df["reg"] == (reg + 1)]["val"]
-        reg_df["hi"] = reg_df["hi"].ffill().fillna(0).astype(pd.UInt16Dtype())
-        reg_df["hi"] = np.left_shift(reg_df["hi"].values, 8)
-        reg_df["val"] = reg_df["lo"] + reg_df["hi"]
-        reg_df["reg"] = reg
-        reg_df["clockdiff"] = reg_df["clock"].diff(-1).abs().fillna(diffmax + 1)
+        reg_df = self._combine_val(reg_df, reg, 2)
+        reg_df["clockdiff"] = (
+            reg_df["clock"].astype(pd.Int64Dtype()).diff(-1).abs().fillna(diffmax + 1)
+        )
         reg_df = reg_df[reg_df["clockdiff"] > diffmax]
         reg_df = reg_df[origcols]
         df = pd.concat([df, reg_df]).sort_values(["clock"]).reset_index(drop=True)
+        return df
+
+    def _combine_vreg(self, df, reg, reg_range=7):
+        origcols = df.columns
+        df["val"] = df["val"].astype(pd.UInt64Dtype())
+        cond = (df["reg"] >= reg) & (df["reg"] < (reg + reg_range))
+        reg_df = df[cond].copy()
+        df = df[~cond]
+        reg_df = self._combine_val(reg_df, reg, reg_range)
+        reg_df = reg_df[origcols]
+        df = pd.concat([df, reg_df]).sort_values(["clock"]).reset_index(drop=True)
+        return df
+
+    def _combine_regs(self, df, diffmax=128):
+        for v in range(3):
+            v_offset = v * 7
+            for reg in (0, 2):
+                df = self._combine_reg(df, reg + v_offset, diffmax)
+        df = self._combine_reg(df, 21)
+        return df
+
+    def _combine_vregs(self, df):
+        for v in range(3):
+            v_offset = v * 7
+            df = self.combine_vreg(df, v_offset)
         return df
 
     def _downsample_diff(self, df_diff, diffq):
@@ -133,6 +166,8 @@ class RegDataset(torch.utils.data.Dataset):
 
     def _downsample_df(self, df, diffmin=8, diffmax=128):
         df = self._squeeze_changes(df)
+        df = self._combine_regs(df)
+        df = self._combine_vregs(df)
         df = self._quantize_longdiff(df, diffmin, diffmax)
         df = self._quantize_diff(df)
         return df[TOKEN_KEYS]

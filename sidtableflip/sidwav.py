@@ -5,6 +5,7 @@ from pyresidfp.sound_interface_device import ChipModel
 import numpy as np
 
 DELAY_REG = -1
+REG_WIDTHS = {0: 7, 7: 7, 14: 7, 21: 2}
 
 
 def sidq():
@@ -27,7 +28,12 @@ def write_samples(df, name):
     for row in df.itertuples():
         if row.reg != DELAY_REG:
             val = row.val
-            sid.write_register(row.reg, val)
+            reg = row.reg
+            width = REG_WIDTHS.get(row.reg, 1)
+            for _ in range(width):
+                sid.write_register(reg, val & 255)
+                reg += 1
+                val >>= 8
         raw_samples.extend(sid.clock(timedelta(seconds=row.delay)))
     wavfile.write(
         name,
