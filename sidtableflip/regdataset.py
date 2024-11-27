@@ -119,7 +119,7 @@ class RegDataset(torch.utils.data.Dataset):
     def _combine_vregs(self, df):
         for v in range(3):
             v_offset = v * 7
-            df = self.combine_vreg(df, v_offset)
+            df = self._combine_vreg(df, v_offset)
         return df
 
     def _downsample_diff(self, df_diff, diffq):
@@ -170,7 +170,7 @@ class RegDataset(torch.utils.data.Dataset):
         df = self._combine_vregs(df)
         df = self._quantize_longdiff(df, diffmin, diffmax)
         df = self._quantize_diff(df)
-        return df[TOKEN_KEYS]
+        return df[TOKEN_KEYS].astype(pd.Int64Dtype())
 
     def _make_tokens(self, dfs):
         tokens = pd.concat(dfs).drop_duplicates().sort_values(TOKEN_KEYS)

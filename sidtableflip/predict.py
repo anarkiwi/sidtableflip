@@ -98,6 +98,7 @@ def main():
     args = parser.parse_args()
     logger = get_logger("INFO")
     dataset = RegDataset(args, logger=logger)
+    dataset.load()
     device = get_device()
     ckpt = args.model_state
     if not ckpt:

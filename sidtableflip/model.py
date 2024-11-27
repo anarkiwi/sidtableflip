@@ -115,10 +115,9 @@ class Model(LightningModule):
             fused=True,
             # weight_decay=1e-1,
         )
-        # self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
-        #    self.optimizer, gamma=0.5
-        # )
-        self.train_acc = torchmetrics.Accuracy("multiclass", num_classes=n_vocab)
+        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
+            self.optimizer, gamma=0.5
+        )
 
     @torch.compiler.disable
     def log_nocompile(self, loss, acc):
@@ -141,8 +140,7 @@ class Model(LightningModule):
         return loss
 
     def configure_optimizers(self):
-        # return [self.optimizer], [self.scheduler]
-        return self.optimizer
+        return [self.optimizer], [self.scheduler]
 
 
 def get_model(dataset, args, mode=None, args_override=None):
