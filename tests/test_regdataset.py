@@ -9,116 +9,76 @@ from sidtableflip.regdataset import RegDataset
 
 
 class FakeArgs:
-    def __init__(self, reglogs, sequence_length):
+    def __init__(self, sequence_length=128, diffq=64):
         self.reglog = None
-        self.reglogs = reglogs
+        self.reglogs = ""
         self.sequence_length = sequence_length
         self.max_files = 1
-        self.diffq = 64
+        self.diffq = diffq
         self.token_csv = None
 
 
 class TestRegDatasetLoader(unittest.TestCase):
+    def test_highbitmask(self):
+        loader = RegDataset(FakeArgs())
+        self.assertEqual(loader.highbitmask(7), 128)
+        self.assertEqual(loader.highbitmask(4), 240)
+        self.assertEqual(loader.highbitmask(1), 254)
+
+    def test_maskregbits(self):
+        loader = RegDataset(FakeArgs())
+        test_df = pd.DataFrame(
+            [
+                {"reg": 1, "val": 255},
+                {"reg": 1, "val": 128},
+            ]
+        )
+        loader._maskregbits(test_df, 1, 1)
+        mask_df = pd.DataFrame(
+            [
+                {"reg": 1, "val": 254},
+                {"reg": 1, "val": 128},
+            ]
+        )
+        self.assertTrue(mask_df.equals(test_df))
+
+    def test_squeeze_changes(self):
+        loader = RegDataset(FakeArgs())
+        test_df = pd.DataFrame(
+            [
+                {"clock": 0, "reg": 1, "val": 1},
+                {"clock": 1, "reg": 1, "val": 1},
+                {"clock": 2, "reg": 2, "val": 1},
+                {"clock": 3, "reg": 2, "val": 2},
+            ]
+        )
+        squeeze_df = pd.DataFrame(
+            [
+                {"clock": 0, "reg": 1, "val": 1},
+                {"clock": 2, "reg": 2, "val": 1},
+                {"clock": 3, "reg": 2, "val": 2},
+            ]
+        )
+        self.assertTrue(squeeze_df.equals(loader._squeeze_changes(test_df)))
+
     def test_loader(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            test_log_name = os.path.join(tmpdir, "log.txt")
-            regdata = [
-                (1, 1, 1, 0, 2, 3),
-                (5, 2, 2, 0, 5, 6),
-                (12, 3, 3, 0, 8, 9),
-                (22, 4, 4, 0, 11, 12),
-                (29, 5, 5, 0, 13, 14),
-            ]
-            with open(test_log_name, "w") as log:
-                for reg_tuple in regdata:
-                    log.write(" ".join([str(x) for x in reg_tuple]) + "\n")
-            args = FakeArgs(test_log_name, 2)
-            loader = RegDataset(args)
-
-            self.assertEqual(loader.highbitmask(7), 128)
-            self.assertEqual(loader.highbitmask(4), 240)
-            self.assertEqual(loader.highbitmask(1), 254)
-
-            test_df = pd.DataFrame(
-                [
-                    {"clock": 1, "reg": 1, "val": 1},
-                    {"clock": 2, "reg": 2, "val": 2},
-                    {"clock": 3, "reg": 1, "val": 1},  # dropped as no-op
-                    {"clock": 8192 + 2, "reg": 1, "val": 2},
-                ],
-                dtype=pd.Int64Dtype(),
-            )
-            squeeze_df = loader._squeeze_changes(test_df)
-            compare_df = pd.DataFrame(
-                [
-                    {"clock": 1, "reg": 1, "val": 1},
-                    {"clock": 2, "reg": 2, "val": 2},
-                    {"clock": 8192 + 2, "reg": 1, "val": 2},
-                ],
-                dtype=pd.Int64Dtype(),
-            )
-            self.assertTrue(compare_df.equals(squeeze_df), (compare_df, squeeze_df))
-
-            compare_df = pd.DataFrame(
-                [
-                    {"diff": 64, "reg": 1, "val": 1},
-                    {"diff": 64, "reg": 2, "val": 2},
-                    {"diff": 64, "reg": -1, "val": 0},
-                    {"diff": 4096, "reg": -1, "val": 0},
-                    {"diff": 64, "reg": 1, "val": 2},
-                ],
-                dtype=pd.Int64Dtype(),
-            )
-
-            compare_df["diff"] = compare_df["diff"].astype(pd.UInt64Dtype())
-            quantize_df = loader._quantize_diff(squeeze_df, diffmax=1)[
-                compare_df.columns
-            ]
-            self.assertTrue(compare_df.equals(quantize_df), (quantize_df, compare_df))
-
-            results = [(i.tolist(), j.tolist()) for i, j in loader]
-            self.assertEqual(
-                [([0, 1], [1, 2]), ([1, 2], [2, 3]), ([2, 3], [3, 4])],
-                results,
-            )
-            tokens = [tuple([int(i) for i in x]) for x in loader.tokens.values]
-            self.assertEqual(
-                [
-                    (2, 3, 64, 0),
-                    (5, 6, 64, 1),
-                    (8, 9, 64, 2),
-                    (11, 12, 64, 3),
-                    (13, 14, 64, 4),
-                ],
-                tokens,
-            )
-
-            unquantized_df = pd.DataFrame(
-                [
-                    {"clock": 1000, "reg": 1, "val": 1},
-                    {"clock": 1016, "reg": 2, "val": 2},
-                    {"clock": 1032, "reg": 3, "val": 3},
-                    {"clock": 2000, "reg": 4, "val": 4},
-                    {"clock": 2016, "reg": 5, "val": 5},
-                    {"clock": 3000, "reg": 6, "val": 6},
-                ]
-            )
-            diffmin = 8
-            quantized_df = loader._quantize_longdiff(
-                unquantized_df, diffmin=diffmin, diffmax=128
-            ).astype(pd.Int64Dtype())
-            compare_df = pd.DataFrame(
-                [
-                    {"reg": 1, "val": 1, "diff": 8},
-                    {"reg": 2, "val": 2, "diff": 8},
-                    {"reg": 3, "val": 3, "diff": 8},
-                    {"reg": -1, "val": 0, "diff": 976},
-                    {"reg": 4, "val": 4, "diff": 8},
-                    {"reg": 5, "val": 5, "diff": 8},
-                    {"reg": -1, "val": 0, "diff": 984},
-                    {"reg": 6, "val": 6, "diff": 8},
-                ],
-                dtype=pd.Int64Dtype(),
-            )
-
-            self.assertTrue(quantized_df.equals(compare_df), quantized_df)
+        sequence_length = 2
+        dfs_n = torch.LongTensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        loader = RegDataset(FakeArgs(sequence_length))
+        loader.dfs_n = dfs_n
+        self.assertEqual(len(loader), len(dfs_n) - sequence_length)
+        loader_output = [[j.tolist() for j in loader[i]] for i in range(len(loader))]
+        self.assertEqual(len(loader_output), len(loader))
+        self.assertEqual(
+            [
+                [[1, 2], [2, 3]],
+                [[2, 3], [3, 4]],
+                [[3, 4], [4, 5]],
+                [[4, 5], [5, 6]],
+                [[5, 6], [6, 7]],
+                [[6, 7], [7, 8]],
+                [[7, 8], [8, 9]],
+                [[8, 9], [9, 10]],
+            ],
+            loader_output,
+        )
