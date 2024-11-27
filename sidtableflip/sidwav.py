@@ -6,8 +6,13 @@ import numpy as np
 
 DELAY_REG = -1
 VOICE_REG = -2
-REG_WIDTHS = {0: 2, 2: 2, 7: 2, 9: 2, 14: 2, 16: 2, 21: 2}
+VOICES = 3
 VOICE_REG_SIZE = 7
+REG_WIDTHS = {21: 2}
+for v in range(VOICES):
+    v_offset = VOICE_REG_SIZE * v
+    for i in (0, 2):
+        REG_WIDTHS[v_offset + i] = 2
 
 
 def sidq():

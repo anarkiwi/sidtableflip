@@ -189,7 +189,7 @@ class RegDataset(torch.utils.data.Dataset):
             self._maskregbits(df, v * VOICE_REG_SIZE + 2, 4)
         df = self._combine_regs(df)
         df = self._squeeze_changes(df)
-        # df = self._add_voice_reg(df)
+        df = self._add_voice_reg(df)
         df = self._quantize_longdiff(df, diffmin, diffmax)
         df = self._quantize_diff(df)
         return df[TOKEN_KEYS].astype(pd.Int64Dtype())
