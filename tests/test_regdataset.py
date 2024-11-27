@@ -19,6 +19,23 @@ class FakeArgs:
 
 
 class TestRegDatasetLoader(unittest.TestCase):
+    def test_make_tokens(self):
+        loader = RegDataset(FakeArgs())
+        test_df = pd.DataFrame(
+            [
+                {"reg": 1, "val": 1, "diff": 1},
+                {"reg": 1, "val": 1, "diff": 1},
+                {"reg": 1, "val": 2, "diff": 1},
+            ]
+        )
+        tokens_df = pd.DataFrame(
+            [
+                {"reg": 1, "val": 1, "diff": 1, "n": 0},
+                {"reg": 1, "val": 2, "diff": 1, "n": 1},
+            ]
+        )
+        self.assertTrue(tokens_df.equals(loader._make_tokens([test_df])))
+
     def test_highbitmask(self):
         loader = RegDataset(FakeArgs())
         self.assertEqual(loader.highbitmask(7), 128)

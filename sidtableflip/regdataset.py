@@ -41,6 +41,13 @@ class RegDataset(torch.utils.data.Dataset):
         df = df[["clock", "reg", "val"]]
         return df
 
+    def _make_tokens(self, dfs):
+        tokens = pd.concat(dfs).drop_duplicates().sort_values(TOKEN_KEYS)
+        tokens.reset_index(drop=True, inplace=True)
+        tokens["n"] = tokens.index
+        tokens = tokens.sort_values(["n"])
+        return tokens
+
     def _maskreg(self, df, reg, valmask):
         mask = df["reg"] == reg
         df.loc[mask, ["val"]] = df[mask]["val"] & valmask
@@ -68,6 +75,14 @@ class RegDataset(torch.utils.data.Dataset):
         return (df_diff["diff"].floordiv(diffq).clip(lower=1) * diffq).astype(
             pd.UInt64Dtype()
         )
+
+    def _quantize_diff(self, df):
+        for diffq_pow in (2, 3, 4, 5):
+            diffq = self.args.diffq**diffq_pow
+            mask = df["diff"] > diffq
+            df.loc[mask, ["diff"]] = self._downsample_diff(df, diffq)
+        df["diff"] = self._downsample_diff(df, self.args.diffq)
+        return df
 
     def _quantize_longdiff(self, df, diffmin, diffmax):
         df["diff"] = df["clock"].diff().shift(-1).fillna(0).astype(pd.Int64Dtype())
@@ -98,17 +113,9 @@ class RegDataset(torch.utils.data.Dataset):
         df = df.drop(["clock", "delaymarker", "markerdelay", "markercount"], axis=1)
         return df
 
-    def _quantize_diff(self, df, diffmin=8, diffmax=128):
-        df = self._quantize_longdiff(df, diffmin, diffmax)
-        for diffq_pow in (2, 3, 4, 5):
-            diffq = self.args.diffq**diffq_pow
-            mask = df["diff"] > diffq
-            df.loc[mask, ["diff"]] = self._downsample_diff(df, diffq)
-        df["diff"] = self._downsample_diff(df, self.args.diffq)
-        return df
-
-    def _downsample_df(self, df):
+    def _downsample_df(self, df, diffmin=8, diffmax=128):
         df = self._squeeze_changes(df)
+        df = self._quantize_longdiff(df, diffmin, diffmax)
         df = self._quantize_diff(df)
         return df[TOKEN_KEYS]
 
