@@ -5,7 +5,9 @@ from pyresidfp.sound_interface_device import ChipModel
 import numpy as np
 
 DELAY_REG = -1
-REG_WIDTHS = {0: 7, 7: 7, 14: 7, 21: 2}
+VOICE_REG = -2
+REG_WIDTHS = {0: 2, 2: 2, 21: 2}
+VOICE_REG_SIZE = 7
 
 
 def sidq():
@@ -18,18 +20,24 @@ def write_samples(df, name):
     # max vol
     sid.write_register(24, 15)
     for v in range(3):
-        offset = v * 7
+        offset = v * VOICE_REG_SIZE
         # max sustain all voices
         sid.write_register(6 + offset, 240)
         # 50% pwm
         sid.write_register(3 + offset, 16)
     raw_samples = []
     df["delay"] = df["diff"] * sidq()
+    voice = 0
     for row in df.itertuples():
+        if row.reg == VOICE_REG:
+            voice = row.val
+            continue
         if row.reg != DELAY_REG:
             val = row.val
             reg = row.reg
-            width = REG_WIDTHS.get(row.reg, 1)
+            if reg < VOICE_REG_SIZE:
+                reg = (voice * VOICE_REG_SIZE) + reg
+            width = REG_WIDTHS.get(reg, 1)
             for _ in range(width):
                 sid.write_register(reg, val & 255)
                 reg += 1

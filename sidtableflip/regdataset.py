@@ -6,7 +6,10 @@ import numpy as np
 import pandas as pd
 
 TOKEN_KEYS = ["reg", "val", "diff"]
+VOICES = 3
+VOICE_REG_SIZE = 7
 DELAY_REG = -1
+VOICE_REG = -2
 
 
 class RegDataset(torch.utils.data.Dataset):
@@ -97,7 +100,7 @@ class RegDataset(torch.utils.data.Dataset):
         df = pd.concat([df, reg_df]).sort_values(["clock"]).reset_index(drop=True)
         return df
 
-    def _combine_vreg(self, df, reg, reg_range=7):
+    def _combine_vreg(self, df, reg, reg_range=VOICE_REG_SIZE):
         origcols = df.columns
         df["val"] = df["val"].astype(pd.UInt64Dtype())
         cond = (df["reg"] >= reg) & (df["reg"] < (reg + reg_range))
@@ -109,16 +112,16 @@ class RegDataset(torch.utils.data.Dataset):
         return df
 
     def _combine_regs(self, df, diffmax=128):
-        for v in range(3):
-            v_offset = v * 7
+        for v in range(VOICES):
+            v_offset = v * VOICE_REG_SIZE
             for reg in (0, 2):
                 df = self._combine_reg(df, reg + v_offset, diffmax)
         df = self._combine_reg(df, 21)
         return df
 
     def _combine_vregs(self, df):
-        for v in range(3):
-            v_offset = v * 7
+        for v in range(VOICES):
+            v_offset = v * VOICE_REG_SIZE
             df = self._combine_vreg(df, v_offset)
         return df
 
@@ -164,10 +167,29 @@ class RegDataset(torch.utils.data.Dataset):
         df = df.drop(["clock", "delaymarker", "markerdelay", "markercount"], axis=1)
         return df
 
+    def _add_voice_reg(self, df):
+        df["voice"] = df["reg"].floordiv(VOICE_REG_SIZE)
+        df.loc[df["reg"] >= (VOICES * VOICE_REG_SIZE), "voice"] = pd.NA
+        df["voice"] = df["voice"].ffill().fillna(0)
+        voice_df = df[df["voice"].diff() != 0].copy()
+        df = df.drop(["voice"], axis=1)
+        voice_df["reg"] = VOICE_REG
+        voice_df["val"] = voice_df["voice"]
+        voice_df = voice_df.drop(["voice"], axis=1)
+        voice_df["clock"] -= 1
+        df["regmod"] = df["reg"].mod(VOICE_REG_SIZE)
+        m = (df["reg"] >= 0) & (df["reg"] < (VOICES * VOICE_REG_SIZE))
+        df.loc[m, "reg"] = df[m]["regmod"]
+        df = df.drop(["regmod"], axis=1)
+        df = pd.concat([df, voice_df]).sort_values(["clock"]).reset_index(drop=True)
+        return df
+
     def _downsample_df(self, df, diffmin=8, diffmax=128):
-        df = self._squeeze_changes(df)
+        for v in range(VOICES):
+            self._maskregbits(df, v * VOICE_REG_SIZE + 2, 4)
         df = self._combine_regs(df)
-        df = self._combine_vregs(df)
+        df = self._squeeze_changes(df)
+        df = self._add_voice_reg(df)
         df = self._quantize_longdiff(df, diffmin, diffmax)
         df = self._quantize_diff(df)
         return df[TOKEN_KEYS].astype(pd.Int64Dtype())
@@ -229,7 +251,7 @@ def get_loader(args, dataset):
     return torch.utils.data.DataLoader(
         dataset,
         shuffle=args.shuffle,
-        pin_memory=True,
+        pin_memory=False,
         batch_size=args.batch_size,
         num_workers=4,  # os.cpu_count(),
     )
