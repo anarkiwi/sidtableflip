@@ -71,6 +71,24 @@ class RegDataset(torch.utils.data.Dataset):
         ]
         return reg_df.join(df)[["clock", "reg", "val"]].reset_index(drop=True)
 
+    def _combine_reg(self, df, reg, diffmax=128):
+        origcols = df.columns
+        cond = (df["reg"] == reg) | (df["reg"] == (reg + 1))
+        reg_df = df[cond].copy()
+        df = df[~cond]
+        reg_df["lo"] = reg_df[reg_df["reg"] == reg]["val"]
+        reg_df["lo"] = reg_df["lo"].ffill().fillna(0).astype(pd.UInt16Dtype())
+        reg_df["hi"] = reg_df[reg_df["reg"] == (reg + 1)]["val"]
+        reg_df["hi"] = reg_df["hi"].ffill().fillna(0).astype(pd.UInt16Dtype())
+        reg_df["hi"] = np.left_shift(reg_df["hi"].values, 8)
+        reg_df["val"] = reg_df["lo"] + reg_df["hi"]
+        reg_df["reg"] = reg
+        reg_df["clockdiff"] = reg_df["clock"].diff(-1).abs().fillna(diffmax + 1)
+        reg_df = reg_df[reg_df["clockdiff"] > diffmax]
+        reg_df = reg_df[origcols]
+        df = pd.concat([df, reg_df]).sort_values(["clock"]).reset_index(drop=True)
+        return df
+
     def _downsample_diff(self, df_diff, diffq):
         return (df_diff["diff"].floordiv(diffq).clip(lower=1) * diffq).astype(
             pd.UInt64Dtype()

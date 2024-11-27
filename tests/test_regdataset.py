@@ -99,3 +99,29 @@ class TestRegDatasetLoader(unittest.TestCase):
             ],
             loader_output,
         )
+
+    def test_combine_reg(self):
+        loader = RegDataset(FakeArgs())
+        test_df = pd.DataFrame(
+            [
+                {"clock": 0, "reg": 1, "val": 1},
+                {"clock": 32, "reg": 1, "val": 1},
+                {"clock": 64, "reg": 2, "val": 1},
+                {"clock": 80, "reg": 2, "val": 2},
+                {"clock": 128, "reg": 1, "val": 2},
+            ]
+        )
+        combine_df = pd.DataFrame(
+            [
+                {"clock": 0, "reg": 1, "val": 1},
+                {"clock": 32, "reg": 1, "val": 1},
+                {"clock": 80, "reg": 1, "val": 513},
+                {"clock": 128, "reg": 1, "val": 514},
+            ],
+            dtype=pd.Int64Dtype(),
+        )
+        self.assertTrue(
+            combine_df.equals(
+                loader._combine_reg(test_df, 1, 16).astype(pd.Int64Dtype())
+            )
+        )
