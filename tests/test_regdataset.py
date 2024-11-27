@@ -78,6 +78,28 @@ class TestRegDatasetLoader(unittest.TestCase):
         )
         self.assertTrue(squeeze_df.equals(loader._squeeze_changes(test_df)))
 
+    def test_add_voice_reg(self):
+        loader = RegDataset(FakeArgs())
+        test_df = pd.DataFrame(
+            [
+                {"clock": 0, "reg": 0, "val": 255},
+                {"clock": 2, "reg": 9, "val": 255},
+                {"clock": 4, "reg": 0, "val": 1},
+            ],
+            dtype=pd.Int64Dtype(),
+        )
+        add_df = pd.DataFrame(
+            [
+                {"clock": 0, "reg": 0, "val": 255},
+                {"clock": 1, "reg": -2, "val": 1},
+                {"clock": 2, "reg": 2, "val": 255},
+                {"clock": 3, "reg": -2, "val": 0},
+                {"clock": 4, "reg": 0, "val": 1},
+            ],
+            dtype=pd.Int64Dtype(),
+        )
+        self.assertTrue(add_df.equals(loader._add_voice_reg(test_df)))
+
     def test_loader(self):
         sequence_length = 2
         dfs_n = torch.LongTensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])

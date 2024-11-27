@@ -6,7 +6,7 @@ import numpy as np
 
 DELAY_REG = -1
 VOICE_REG = -2
-REG_WIDTHS = {0: 2, 2: 2, 21: 2}
+REG_WIDTHS = {0: 2, 2: 2, 7: 2, 9: 2, 14: 2, 16: 2, 21: 2}
 VOICE_REG_SIZE = 7
 
 
@@ -27,15 +27,14 @@ def write_samples(df, name):
         sid.write_register(3 + offset, 16)
     raw_samples = []
     df["delay"] = df["diff"] * sidq()
-    voice = 0
+    voice = -1
     for row in df.itertuples():
         if row.reg == VOICE_REG:
             voice = row.val
-            continue
-        if row.reg != DELAY_REG:
+        elif row.reg != DELAY_REG:
             val = row.val
             reg = row.reg
-            if reg < VOICE_REG_SIZE:
+            if voice >= 0 and reg < VOICE_REG_SIZE:
                 reg = (voice * VOICE_REG_SIZE) + reg
             width = REG_WIDTHS.get(reg, 1)
             for _ in range(width):
