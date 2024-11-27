@@ -184,15 +184,30 @@ class RegDataset(torch.utils.data.Dataset):
         df = pd.concat([df, voice_df]).sort_values(["clock"]).reset_index(drop=True)
         return df
 
+    def _rotate_voice_augment(self, orig_df):
+        dfs = []
+
+        for r in range(VOICES):
+            df = orig_df.copy()
+            m = orig_df["reg"] < VOICE_REG_SIZE * VOICES
+            df.loc[m, "reg"] = (df[m]["reg"] + (VOICE_REG_SIZE * r)).mod(
+                VOICE_REG_SIZE * VOICES
+            )
+            dfs.append(df)
+
+        return pd.concat(dfs).reset_index(drop=True)
+
     def _downsample_df(self, df, diffmin=8, diffmax=128):
         for v in range(VOICES):
             self._maskregbits(df, v * VOICE_REG_SIZE + 2, 4)
-        df = self._combine_regs(df)
+        # df = self._combine_regs(df)
         df = self._squeeze_changes(df)
-        df = self._add_voice_reg(df)
+        # df = self._add_voice_reg(df)
         df = self._quantize_longdiff(df, diffmin, diffmax)
         df = self._quantize_diff(df)
-        return df[TOKEN_KEYS].astype(pd.Int64Dtype())
+        df = df[TOKEN_KEYS].astype(pd.Int64Dtype())
+        df = self._rotate_voice_augment(df)
+        return df
 
     def _make_tokens(self, dfs):
         tokens = pd.concat(dfs).drop_duplicates().sort_values(TOKEN_KEYS)

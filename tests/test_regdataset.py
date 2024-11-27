@@ -168,3 +168,29 @@ class TestRegDatasetLoader(unittest.TestCase):
             dtype=pd.UInt64Dtype(),
         )
         self.assertTrue(combine_df.equals(loader._combine_vreg(test_df, 0)))
+
+    def test_rotate_voice_augment(self):
+        loader = RegDataset(FakeArgs())
+        test_df = pd.DataFrame(
+            [
+                {"clock": 0, "reg": 0, "val": 1},
+                {"clock": 32, "reg": 7, "val": 2},
+                {"clock": 64, "reg": 14, "val": 3},
+            ],
+            dtype=pd.UInt64Dtype(),
+        )
+        rotate_df = pd.DataFrame(
+            [
+                {"clock": 0, "reg": 0, "val": 1},
+                {"clock": 32, "reg": 7, "val": 2},
+                {"clock": 64, "reg": 14, "val": 3},
+                {"clock": 0, "reg": 7, "val": 1},
+                {"clock": 32, "reg": 14, "val": 2},
+                {"clock": 64, "reg": 0, "val": 3},
+                {"clock": 0, "reg": 14, "val": 1},
+                {"clock": 32, "reg": 0, "val": 2},
+                {"clock": 64, "reg": 7, "val": 3},
+            ],
+            dtype=pd.UInt64Dtype(),
+        )
+        self.assertTrue(rotate_df.equals(loader._rotate_voice_augment(test_df)))
