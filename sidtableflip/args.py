@@ -32,6 +32,9 @@ def add_args(parser):
     parser.add_argument(
         "--csv", type=str, default="/scratch/sidtableflip/sidtableflip.csv"
     )
+    parser.add_argument(
+        "--dataset-csv", type=str, default="/scratch/sidtableflip/dataset.csv"
+    )
     parser.add_argument("--output-cycles", type=int, default=60e6)
     parser.add_argument("--shuffle", action=BooleanOptionalAction, default=True)
     parser.add_argument("--include-prompt", action=BooleanOptionalAction, default=True)

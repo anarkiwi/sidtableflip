@@ -185,6 +185,7 @@ class RegDataset(torch.utils.data.Dataset):
             self.tokens = pd.read_csv(
                 self.args.token_csv, dtype=pd.Int64Dtype(), index_col=0
             )
+            self.dfs = pd.concat(self.dfs).merge(self.tokens, on=TOKEN_KEYS, how="left")
         else:
             files = []
             random.seed(0)
@@ -199,10 +200,12 @@ class RegDataset(torch.utils.data.Dataset):
                 self._downsample_df(self._read_df(name)) for name in sorted(files)
             ]
             self.tokens = self._make_tokens(self.dfs)
+            self.dfs = pd.concat(self.dfs).merge(self.tokens, on=TOKEN_KEYS, how="left")
             if self.args.token_csv:
                 self.logger.info("writing %s", self.args.token_csv)
                 self.tokens.to_csv(self.args.token_csv)
-        self.dfs = pd.concat(self.dfs).merge(self.tokens, on=TOKEN_KEYS, how="left")
+            if self.args.dataset_csv:
+                self.dfs.to_csv(self.args.dataset_csv)
         self.dfs_n = torch.LongTensor(self.dfs["n"].values)
         self.n_vocab = len(self.tokens)
         self.n_words = len(self.dfs_n)
