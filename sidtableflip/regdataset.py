@@ -186,14 +186,34 @@ class RegDataset(torch.utils.data.Dataset):
 
     def _rotate_voice_augment(self, orig_df):
         dfs = []
+        filter_shift_df = pd.DataFrame(
+            [
+                {"val": 0b000, "y": 0b000},
+                {"val": 0b001, "y": 0b010},
+                {"val": 0b010, "y": 0b100},
+                {"val": 0b011, "y": 0b110},
+                {"val": 0b100, "y": 0b001},
+                {"val": 0b101, "y": 0b011},
+                {"val": 0b110, "y": 0b101},
+                {"val": 0b111, "y": 0b111},
+            ],
+            dtype=pd.UInt64Dtype(),
+        )
 
         for r in range(VOICES):
             df = orig_df.copy()
-            m = orig_df["reg"] < VOICE_REG_SIZE * VOICES
+            m = df["reg"] < VOICE_REG_SIZE * VOICES
             df.loc[m, "reg"] = (df[m]["reg"] + (VOICE_REG_SIZE * r)).mod(
                 VOICE_REG_SIZE * VOICES
             )
-            dfs.append(df)
+            m = df["reg"] == 23
+            df.loc[m, "fres"] = df[m]["val"].values & 0xF0
+            df.loc[m, "val"] -= df[m]["fres"]
+            for _ in range(r):
+                new_val = df.merge(filter_shift_df, on="val")["y"]
+                df.loc[m, "val"] = new_val[m]
+            df.loc[m, "val"] += df[m]["fres"]
+            dfs.append(df[orig_df.columns])
 
         return pd.concat(dfs).reset_index(drop=True)
 

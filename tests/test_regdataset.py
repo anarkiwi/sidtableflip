@@ -174,6 +174,7 @@ class TestRegDatasetLoader(unittest.TestCase):
         test_df = pd.DataFrame(
             [
                 {"clock": 0, "reg": 0, "val": 1},
+                {"clock": 16, "reg": 23, "val": 1 + 4},
                 {"clock": 32, "reg": 7, "val": 2},
                 {"clock": 64, "reg": 14, "val": 3},
             ],
@@ -182,12 +183,15 @@ class TestRegDatasetLoader(unittest.TestCase):
         rotate_df = pd.DataFrame(
             [
                 {"clock": 0, "reg": 0, "val": 1},
+                {"clock": 16, "reg": 23, "val": 1 + 4},
                 {"clock": 32, "reg": 7, "val": 2},
                 {"clock": 64, "reg": 14, "val": 3},
                 {"clock": 0, "reg": 7, "val": 1},
+                {"clock": 16, "reg": 23, "val": 2 + 1},
                 {"clock": 32, "reg": 14, "val": 2},
                 {"clock": 64, "reg": 0, "val": 3},
                 {"clock": 0, "reg": 14, "val": 1},
+                {"clock": 16, "reg": 23, "val": 4 + 2},
                 {"clock": 32, "reg": 0, "val": 2},
                 {"clock": 64, "reg": 7, "val": 3},
             ],
