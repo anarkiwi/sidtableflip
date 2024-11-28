@@ -210,10 +210,14 @@ class RegDataset(torch.utils.data.Dataset):
             df.loc[m, "fres"] = df[m]["val"].values & 0xF0
             df.loc[m, "val"] -= df[m]["fres"]
             for _ in range(r):
-                new_val = df.merge(filter_shift_df, on="val")["y"]
-                df.loc[m, "val"] = new_val[m]
+                df = df.merge(filter_shift_df, on="val")
+                m = df["reg"] == 23
+                df.loc[m, "val"] = df[m]["y"]
+                df = df.drop(["y"], axis=1)
+            m = df["reg"] == 23
             df.loc[m, "val"] += df[m]["fres"]
-            yield df[orig_df.columns]
+            df = df[orig_df.columns]
+            yield df
 
     def _downsample_df(self, df, diffmin=8, diffmax=128):
         for v in range(VOICES):
