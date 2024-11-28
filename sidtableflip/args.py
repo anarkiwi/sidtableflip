@@ -22,8 +22,8 @@ def add_args(parser):
         default="",
     )
     parser.add_argument("--tb_logs", type=str, default="/scratch/sidtableflip/tb_logs")
-    parser.add_argument("--sequence-length", type=int, default=2048)
-    parser.add_argument("--max-sequence-length", type=int, default=2048)
+    parser.add_argument("--sequence-length", type=int, default=4096)
+    parser.add_argument("--max-sequence-length", type=int, default=4096)
     parser.add_argument("--max-epochs", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument(

@@ -62,7 +62,7 @@ def generate_sequence(logger, dataset, model, device, prompt, prompt_from, args)
         cycles = df["diff"].sum() - prompt_cycles
         if args.csv:
             df.to_csv(args.csv)
-        write_samples(df, args.wav)
+        write_samples(df, args.wav, dataset.reg_widths)
         progress = cycles / float(args.output_cycles) * 100
         acc = "unknown"
         if prompt_compare.shape == new_states.shape:
@@ -88,7 +88,7 @@ def generate_sequence(logger, dataset, model, device, prompt, prompt_from, args)
     logger.info(
         "finalized %9.u cycles %6.2f seconds %6.2f%%", cycles, cycles * sidq(), 100
     )
-    write_samples(df, args.wav)
+    write_samples(df, args.wav, dataset.reg_widths)
     if args.csv:
         df.to_csv(args.csv)
 

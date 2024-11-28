@@ -1,3 +1,4 @@
+import bitsandbytes as bnb
 import torch
 from pytorch_lightning import LightningModule
 from torchtune.models.gemma._component_builders import gemma
@@ -115,6 +116,10 @@ class Model(LightningModule):
             fused=True,
             # weight_decay=1e-1,
         )
+        # self.optimizer = bnb.optim.AdamW(
+        #    self.parameters(),
+        #    lr=self.args.learning_rate,
+        # )
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
             self.optimizer, gamma=0.5
         )

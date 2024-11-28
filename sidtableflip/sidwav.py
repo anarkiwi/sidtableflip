@@ -8,11 +8,6 @@ DELAY_REG = -1
 VOICE_REG = -2
 VOICES = 3
 VOICE_REG_SIZE = 7
-REG_WIDTHS = {21: 2}
-for v in range(VOICES):
-    v_offset = VOICE_REG_SIZE * v
-    for i in (0, 2):
-        REG_WIDTHS[v_offset + i] = 2
 
 
 def sidq():
@@ -20,7 +15,7 @@ def sidq():
     return sid.clock_frequency / 1e6 / 1e6
 
 
-def write_samples(df, name):
+def write_samples(df, name, reg_widths):
     sid = SoundInterfaceDevice(model=ChipModel.MOS8580)
     # max vol
     sid.write_register(24, 15)
@@ -39,9 +34,9 @@ def write_samples(df, name):
         elif row.reg != DELAY_REG:
             val = row.val
             reg = row.reg
+            width = reg_widths.get(reg, 1)
             if voice >= 0 and reg < VOICE_REG_SIZE:
                 reg = (voice * VOICE_REG_SIZE) + reg
-            width = REG_WIDTHS.get(reg, 1)
             for _ in range(width):
                 sid.write_register(reg, val & 255)
                 reg += 1

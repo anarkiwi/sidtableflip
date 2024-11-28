@@ -21,6 +21,7 @@ class RegDataset(torch.utils.data.Dataset):
         self.tokens = None
         self.n_vocab = 0
         self.n_words = 0
+        self.reg_widths = {}
 
     def _read_df(self, name):
         self.logger.info(f"loading {name}")
@@ -216,6 +217,7 @@ class RegDataset(torch.utils.data.Dataset):
 
     def _downsample_df(self, df, diffmin=8, diffmax=128):
         for v in range(VOICES):
+            # self._maskregbits(df, v * VOICE_REG_SIZE, 1)
             self._maskregbits(df, v * VOICE_REG_SIZE + 2, 4)
         df = self._combine_regs(df)
         # df = self._combine_vregs(df)
@@ -263,10 +265,18 @@ class RegDataset(torch.utils.data.Dataset):
                 self.tokens.to_csv(self.args.token_csv)
             if self.args.dataset_csv:
                 self.dfs.to_csv(self.args.dataset_csv)
+        for reg in self.dfs["reg"].unique():
+            reg_max = self.dfs[self.dfs["reg"] == reg]["val"].max()
+            for width in range(1, 8):
+                if reg_max < 2 ** (8 * width):
+                    self.reg_widths[int(reg)] = width
+                    break
         self.dfs_n = torch.LongTensor(self.dfs["n"].values)
         self.n_vocab = len(self.tokens)
         self.n_words = len(self.dfs_n)
-        self.logger.info(f"n_vocab: {self.n_vocab}, n_words {self.n_words}")
+        self.logger.info(
+            f"n_vocab: {self.n_vocab}, n_words {self.n_words}, reg widths {sorted(self.reg_widths.items())}"
+        )
 
     def __len__(self):
         return len(self.dfs_n) - self.args.sequence_length
@@ -286,7 +296,7 @@ def get_loader(args, dataset):
     return torch.utils.data.DataLoader(
         dataset,
         shuffle=args.shuffle,
-        pin_memory=False,
+        pin_memory=True,
         batch_size=args.batch_size,
         num_workers=4,  # os.cpu_count(),
     )
