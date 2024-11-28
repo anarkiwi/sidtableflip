@@ -112,10 +112,10 @@ class RegDataset(torch.utils.data.Dataset):
         df = pd.concat([df, reg_df]).sort_values(["clock"]).reset_index(drop=True)
         return df
 
-    def _combine_regs(self, df, diffmax=128):
+    def _combine_regs(self, df, diffmax=128, regs=(2,)):
         for v in range(VOICES):
             v_offset = v * VOICE_REG_SIZE
-            for reg in (0, 2):
+            for reg in regs:
                 df = self._combine_reg(df, reg + v_offset, diffmax)
         df = self._combine_reg(df, 21)
         return df
