@@ -197,4 +197,7 @@ class TestRegDatasetLoader(unittest.TestCase):
             ],
             dtype=pd.UInt64Dtype(),
         )
-        self.assertTrue(rotate_df.equals(loader._rotate_voice_augment(test_df)))
+        result_df = pd.concat(loader._rotate_voice_augment(test_df)).reset_index(
+            drop=True
+        )
+        self.assertTrue(rotate_df.equals(result_df))

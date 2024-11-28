@@ -185,7 +185,6 @@ class RegDataset(torch.utils.data.Dataset):
         return df
 
     def _rotate_voice_augment(self, orig_df):
-        dfs = []
         filter_shift_df = pd.DataFrame(
             [
                 {"val": 0b000, "y": 0b000},
@@ -213,21 +212,22 @@ class RegDataset(torch.utils.data.Dataset):
                 new_val = df.merge(filter_shift_df, on="val")["y"]
                 df.loc[m, "val"] = new_val[m]
             df.loc[m, "val"] += df[m]["fres"]
-            dfs.append(df[orig_df.columns])
-
-        return pd.concat(dfs).reset_index(drop=True)
+            yield df[orig_df.columns]
 
     def _downsample_df(self, df, diffmin=8, diffmax=128):
         for v in range(VOICES):
             self._maskregbits(df, v * VOICE_REG_SIZE + 2, 4)
-        # df = self._combine_regs(df)
+        df = self._combine_regs(df)
+        # df = self._combine_vregs(df)
         df = self._squeeze_changes(df)
-        # df = self._add_voice_reg(df)
-        df = self._quantize_longdiff(df, diffmin, diffmax)
-        df = self._quantize_diff(df)
-        df = df[TOKEN_KEYS].astype(pd.Int64Dtype())
-        df = self._rotate_voice_augment(df)
-        return df
+        dfs = []
+        for df in self._rotate_voice_augment(df):
+            df = self._add_voice_reg(df)
+            df = self._quantize_longdiff(df, diffmin, diffmax)
+            df = self._quantize_diff(df)
+            df = df[TOKEN_KEYS].astype(pd.Int64Dtype())
+            dfs.append(df)
+        return pd.concat(dfs).reset_index(drop=True)
 
     def _make_tokens(self, dfs):
         tokens = pd.concat(dfs).drop_duplicates().sort_values(TOKEN_KEYS)
