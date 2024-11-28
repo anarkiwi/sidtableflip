@@ -275,9 +275,11 @@ class RegDataset(torch.utils.data.Dataset):
                 if reg_max < 2 ** (8 * width):
                     self.reg_widths[int(reg)] = width
                     break
+            assert self.reg_widths[int(reg)]
         self.dfs_n = torch.LongTensor(self.dfs["n"].values)
         self.n_vocab = len(self.tokens)
         self.n_words = len(self.dfs_n)
+        assert self.tokens[self.tokens["val"].isna()].empty
         self.logger.info(
             f"n_vocab: {self.n_vocab}, n_words {self.n_words}, reg widths {sorted(self.reg_widths.items())}"
         )
