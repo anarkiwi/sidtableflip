@@ -6,6 +6,7 @@ import numpy as np
 
 DELAY_REG = -1
 VOICE_REG = -2
+CTRL_REG = -3
 VOICES = 3
 VOICE_REG_SIZE = 7
 
@@ -31,6 +32,11 @@ def write_samples(df, name, reg_widths):
     for row in df.itertuples():
         if row.reg == VOICE_REG:
             voice = row.val
+        elif row.reg == CTRL_REG:
+            val = row.val
+            for reg in (4, 11, 18):
+                sid.write_register(reg, val & 255)
+                val >>= 8
         elif row.reg != DELAY_REG:
             val = row.val
             reg = row.reg

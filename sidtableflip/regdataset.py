@@ -10,6 +10,21 @@ VOICES = 3
 VOICE_REG_SIZE = 7
 DELAY_REG = -1
 VOICE_REG = -2
+CTRL_REG = -3
+
+FILTER_SHIFT_DF = pd.DataFrame(
+    [
+        {"reg": 23, "val": 0b000, "y": 0b000},
+        {"reg": 23, "val": 0b001, "y": 0b010},
+        {"reg": 23, "val": 0b010, "y": 0b100},
+        {"reg": 23, "val": 0b011, "y": 0b110},
+        {"reg": 23, "val": 0b100, "y": 0b001},
+        {"reg": 23, "val": 0b101, "y": 0b011},
+        {"reg": 23, "val": 0b110, "y": 0b101},
+        {"reg": 23, "val": 0b111, "y": 0b111},
+    ],
+    dtype=pd.Int64Dtype(),
+)
 
 
 class RegDataset(torch.utils.data.Dataset):
@@ -170,7 +185,9 @@ class RegDataset(torch.utils.data.Dataset):
 
     def _add_voice_reg(self, df):
         df["voice"] = df["reg"].floordiv(VOICE_REG_SIZE)
-        df.loc[df["reg"] >= (VOICES * VOICE_REG_SIZE), "voice"] = pd.NA
+        df.loc[(df["reg"] >= (VOICES * VOICE_REG_SIZE)) | (df["reg"] < 0), "voice"] = (
+            pd.NA
+        )
         df["voice"] = df["voice"].ffill().fillna(0)
         voice_df = df[df["voice"].diff() != 0].copy()
         df = df.drop(["voice"], axis=1)
@@ -185,37 +202,40 @@ class RegDataset(torch.utils.data.Dataset):
         df = pd.concat([df, voice_df]).sort_values(["clock"]).reset_index(drop=True)
         return df
 
-    def _rotate_voice_augment(self, orig_df):
-        filter_shift_df = pd.DataFrame(
-            [
-                {"val": 0b000, "y": 0b000},
-                {"val": 0b001, "y": 0b010},
-                {"val": 0b010, "y": 0b100},
-                {"val": 0b011, "y": 0b110},
-                {"val": 0b100, "y": 0b001},
-                {"val": 0b101, "y": 0b011},
-                {"val": 0b110, "y": 0b101},
-                {"val": 0b111, "y": 0b111},
-            ],
-            dtype=pd.UInt64Dtype(),
-        )
+    def _add_ctrl_reg(self, df):
+        for v in range(VOICES):
+            ctrl = (VOICE_REG_SIZE * v) + 4
+            m = df["reg"] == ctrl
+            df.loc[m, str(v)] = df["val"]
+            df[str(v)] = np.left_shift(df[str(v)].values, v * 8)
+            df[str(v)] = df[str(v)].ffill().fillna(0)
+        m = (df["reg"] == 4) | (df["reg"] == 11) | (df["reg"] == 18)
+        df.loc[m, "val"] = df[m][str(0)] + df[m][str(1)] + df[m][str(2)]
+        df.loc[m, "reg"] = CTRL_REG
+        return df
 
+    def _rotate_filter(self, df, r):
+        m = df["reg"] == 23
+        df.loc[m, "fres"] = df[m]["val"].values & 0xF0
+        df.loc[m, "val"] -= df[m]["fres"]
+        for _ in range(r):
+            df = df.merge(FILTER_SHIFT_DF, how="left", on=["reg", "val"])
+            m = df["reg"] == 23
+            df.loc[m, "val"] = df[m]["y"]
+            df = df.drop(["y"], axis=1)
+        m = df["reg"] == 23
+        df.loc[m, "val"] += df[m]["fres"]
+        return df
+
+    def _rotate_voice_augment(self, orig_df):
         for r in range(VOICES):
             df = orig_df.copy()
             m = df["reg"] < VOICE_REG_SIZE * VOICES
             df.loc[m, "reg"] = (df[m]["reg"] + (VOICE_REG_SIZE * r)).mod(
                 VOICE_REG_SIZE * VOICES
             )
-            m = df["reg"] == 23
-            df.loc[m, "fres"] = df[m]["val"].values & 0xF0
-            df.loc[m, "val"] -= df[m]["fres"]
-            for _ in range(r):
-                df = df.merge(filter_shift_df, on="val")
-                m = df["reg"] == 23
-                df.loc[m, "val"] = df[m]["y"]
-                df = df.drop(["y"], axis=1)
-            m = df["reg"] == 23
-            df.loc[m, "val"] += df[m]["fres"]
+            df = self._add_ctrl_reg(df)
+            df = self._rotate_filter(df, r)
             df = df[orig_df.columns]
             yield df
 
@@ -223,7 +243,7 @@ class RegDataset(torch.utils.data.Dataset):
         for v in range(VOICES):
             # self._maskregbits(df, v * VOICE_REG_SIZE, 1)
             self._maskregbits(df, v * VOICE_REG_SIZE + 2, 4)
-        df = self._combine_regs(df)
+        # df = self._combine_regs(df)
         # df = self._combine_vregs(df)
         df = self._squeeze_changes(df)
         dfs = []
@@ -268,6 +288,7 @@ class RegDataset(torch.utils.data.Dataset):
                 self.logger.info("writing %s", self.args.token_csv)
                 self.tokens.to_csv(self.args.token_csv)
             if self.args.dataset_csv:
+                self.logger.info("writing %s", self.args.dataset_csv)
                 self.dfs.to_csv(self.args.dataset_csv)
         for reg in self.dfs["reg"].unique():
             reg_max = self.dfs[self.dfs["reg"] == reg]["val"].max()
@@ -280,6 +301,7 @@ class RegDataset(torch.utils.data.Dataset):
         self.n_vocab = len(self.tokens)
         self.n_words = len(self.dfs_n)
         assert self.tokens[self.tokens["val"].isna()].empty
+        assert self.tokens[self.tokens["val"] < 0].empty
         assert self.dfs[self.dfs["n"].isna()].empty
         self.logger.info(
             f"n_vocab: {self.n_vocab}, n_words {self.n_words}, reg widths {sorted(self.reg_widths.items())}"

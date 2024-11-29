@@ -174,30 +174,38 @@ class TestRegDatasetLoader(unittest.TestCase):
         test_df = pd.DataFrame(
             [
                 {"clock": 0, "reg": 0, "val": 1},
+                {"clock": 8, "reg": 4, "val": 1},
+                {"clock": 12, "reg": 11, "val": 2},
                 {"clock": 16, "reg": 23, "val": 1 + 4},
                 {"clock": 32, "reg": 7, "val": 2},
                 {"clock": 64, "reg": 14, "val": 3},
             ],
-            dtype=pd.UInt64Dtype(),
+            dtype=pd.Int64Dtype(),
         )
         rotate_df = pd.DataFrame(
             [
                 {"clock": 0, "reg": 0, "val": 1},
+                {"clock": 8, "reg": -3, "val": 1},
+                {"clock": 12, "reg": -3, "val": 513},
                 {"clock": 16, "reg": 23, "val": 1 + 4},
                 {"clock": 32, "reg": 7, "val": 2},
                 {"clock": 64, "reg": 14, "val": 3},
                 {"clock": 0, "reg": 7, "val": 1},
+                {"clock": 8, "reg": -3, "val": 256},
+                {"clock": 12, "reg": -3, "val": 131328},
                 {"clock": 16, "reg": 23, "val": 2 + 1},
                 {"clock": 32, "reg": 14, "val": 2},
                 {"clock": 64, "reg": 0, "val": 3},
                 {"clock": 0, "reg": 14, "val": 1},
+                {"clock": 8, "reg": -3, "val": 65536},
+                {"clock": 12, "reg": -3, "val": 65538},
                 {"clock": 16, "reg": 23, "val": 4 + 2},
                 {"clock": 32, "reg": 0, "val": 2},
                 {"clock": 64, "reg": 7, "val": 3},
             ],
-            dtype=pd.UInt64Dtype(),
+            dtype=pd.Int64Dtype(),
         )
         result_df = pd.concat(loader._rotate_voice_augment(test_df)).reset_index(
             drop=True
         )
-        self.assertTrue(rotate_df.equals(result_df))
+        self.assertTrue(rotate_df.equals(result_df), result_df)
