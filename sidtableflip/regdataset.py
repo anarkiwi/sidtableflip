@@ -280,6 +280,7 @@ class RegDataset(torch.utils.data.Dataset):
         self.n_vocab = len(self.tokens)
         self.n_words = len(self.dfs_n)
         assert self.tokens[self.tokens["val"].isna()].empty
+        assert self.dfs[self.dfs["n"].isna()].empty
         self.logger.info(
             f"n_vocab: {self.n_vocab}, n_words {self.n_words}, reg widths {sorted(self.reg_widths.items())}"
         )

@@ -1,12 +1,37 @@
 import bitsandbytes as bnb
 import torch
 from pytorch_lightning import LightningModule
+from pytorch_lightning.callbacks import ModelCheckpoint
+from schedulefree import AdamWScheduleFree
 from torchtune.models.gemma._component_builders import gemma
 from torchtune.models.llama2._component_builders import llama2
 from torchtune.models.mistral._component_builders import mistral
 from torchtune.models.phi3._component_builders import phi3
 from torchtune.models.qwen2._component_builders import qwen2
 import torchmetrics
+
+
+class SchedulerFreeModelCheckpoint(ModelCheckpoint):
+    def _save_checkpoint(self, trainer, filepath):
+        opts = trainer.optimizers
+        if not isinstance(opts, list):
+            opts = [opts]
+
+        opt_modes = [
+            (opt, opt.param_groups[0]["train_mode"])
+            for opt in opts
+            if isinstance(opt, AdamWScheduleFree)
+        ]
+
+        for opt, train_mode in opt_modes:
+            if train_mode:
+                opt.eval()
+
+        super()._save_checkpoint(trainer, filepath)
+
+        for opt, train_mode in opt_modes:
+            if train_mode:
+                opt.train()
 
 
 def get_gemma(n_vocab, args):
@@ -110,19 +135,24 @@ class Model(LightningModule):
         self.n_vocab = n_vocab
         self.save_hyperparameters("args", "n_vocab")
         self.model = MODEL_GETTERS[args.model](n_vocab, args)
-        self.optimizer = torch.optim.AdamW(
+        self.optimizer = AdamWScheduleFree(
             self.parameters(),
             lr=self.args.learning_rate,
-            fused=True,
-            # weight_decay=1e-1,
+            foreach=True,
         )
+        # self.optimizer = torch.optim.AdamW(
+        #    self.parameters(),
+        #    lr=self.args.learning_rate,
+        #    fused=True,
+        #    # weight_decay=1e-1,
+        # )
         # self.optimizer = bnb.optim.AdamW(
         #    self.parameters(),
         #    lr=self.args.learning_rate,
         # )
-        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
-            self.optimizer, gamma=0.5
-        )
+        # self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
+        #    self.optimizer, gamma=0.5
+        # )
 
     @torch.compiler.disable
     def log_nocompile(self, loss, acc):
@@ -145,7 +175,30 @@ class Model(LightningModule):
         return loss
 
     def configure_optimizers(self):
-        return [self.optimizer], [self.scheduler]
+        # return [self.optimizer], [self.scheduler]
+        return self.optimizer
+
+    def set_optimizer_state(self, state):
+        opts = self.optimizers()
+        if not isinstance(opts, list):
+            opts = [opts]
+
+        for opt in opts:
+            if isinstance(opt, AdamWScheduleFree):
+                if state == "train":
+                    opt.train()
+                elif state == "eval":
+                    opt.eval()
+                else:
+                    raise ValueError(f"Unknown train state {state}")
+
+    def on_train_epoch_start(self):
+        super().on_train_epoch_start()
+        self.set_optimizer_state("train")
+
+    def on_validation_epoch_start(self):
+        super().on_validation_epoch_start()
+        self.set_optimizer_state("eval")
 
 
 def get_model(dataset, args, mode=None, args_override=None):

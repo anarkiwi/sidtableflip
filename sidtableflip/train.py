@@ -6,17 +6,19 @@ import pytorch_lightning as pl
 from torchtune.utils import get_logger
 from regdataset import RegDataset, get_loader
 from args import add_args
-from model import get_model
+from model import get_model, SchedulerFreeModelCheckpoint
 
 
 def train(model, dataloader, args):
     tb_logger = pl.loggers.TensorBoardLogger(args.tb_logs, "sidtableflip")
+    checkpoint_callback = SchedulerFreeModelCheckpoint()
     trainer = pl.Trainer(
         max_epochs=args.max_epochs,
         default_root_dir=os.path.dirname(args.model_state),
         precision=args.trainer_precision,
         enable_checkpointing=True,
         logger=tb_logger,
+        callbacks=[checkpoint_callback],
     )
     ckpt_path = None
     if os.path.exists(args.model_state):

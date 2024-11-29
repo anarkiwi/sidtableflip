@@ -7,7 +7,7 @@ RUN pip install $PIP_OPTS -r /root/requirements.txt -r /root/test-requirements.t
 WORKDIR /
 COPY sidtableflip /sidtableflip
 COPY tests /tests
-RUN black --check sidtableflip tests && PYTHONPATH=. pytest -svvv /tests && PYTHONPATH=. pylint -E sidtableflip
+RUN black --check sidtableflip tests && PYTHONPATH=. pytest -svvv /tests && PYTHONPATH=. pylint -E sidtableflip && PYTHONPATH=. pytype sidtableflip
 
 # docker build -f Dockerfile . -t anarkiwi/sidtableflip
 # docker run --gpus=all -v /scratch:/scratch -ti anarkiwi/sidtableflip /sidtableflip/train.py --batch-size 64
