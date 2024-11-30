@@ -116,6 +116,7 @@ def main():
         mode="max-autotune",
     )
     model.eval()
+    # model.model.setup_caches(1, torch.float16)
 
     if args.start_n is None:
         start = random.randint(0, dataset.n_words)
