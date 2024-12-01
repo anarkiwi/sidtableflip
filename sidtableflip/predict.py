@@ -6,6 +6,7 @@ import os
 import random
 import pandas as pd
 from torchtune.utils import get_logger
+from torchtune.generation import generate as generate
 import torch
 import torchmetrics
 from args import add_args
@@ -18,22 +19,44 @@ class Predictor:
     def __init__(self, args, model, device, prompt):
         self.args = args
         self.model = model
+        self.device = device
         self.prompt = prompt.clone().to(device)
+        self.rng = torch.Generator(device=self.device)
+        self.rng.seed()
+
+    def next_prompt(self, output, n):
+        self.prompt = torch.roll(self.prompt, -n)
+        self.prompt[0][-n:] = output[0][-n:]
+
+    def predict_n_tt(self, n, temperature, top_k):
+        output, _logits = generate(
+            self.model.model,
+            self.prompt.clone(),
+            max_generated_tokens=n,
+            pad_id=-999,
+            top_k=top_k,
+            temperature=temperature,
+            rng=self.rng,
+        )
+        self.next_prompt(output, n)
+
+    def predict_nano(self, temperature, top_k):
+        logits = self.model.model(self.prompt.clone())
+        logits = logits[:, -1, :] / temperature
+        if top_k is not None:
+            v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
+            logits[logits < v[:, [-1]]] = -float("Inf")
+        probs = torch.nn.functional.softmax(logits, dim=-1)
+        next_state = torch.multinomial(probs, num_samples=1)
+        self.next_prompt(next_state, 1)
 
     @torch.inference_mode()
     def predict(self, temperature=1.0, top_k=None):
         for _ in range(self.args.sequence_length):
-            logits = self.model.model(self.prompt)
-            logits = logits[:, -1, :] / temperature
-            if top_k is not None:
-                v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
-                logits[logits < v[:, [-1]]] = -float("Inf")
-            probs = torch.nn.functional.softmax(logits, dim=-1)
-            next_state = torch.multinomial(probs, num_samples=1)[0][0]
-            self.prompt = torch.roll(self.prompt, -1)
-            self.prompt[0][-1] = next_state
-
-        return self.prompt.detach().squeeze(0)
+            self.predict_nano(temperature, top_k)
+            # self.predict_n_tt(1, temperature, top_k)
+        # self.predict_n_tt(self.args.sequence_length, temperature, top_k)
+        return self.prompt.clone().detach().squeeze(0)
 
 
 def state_df(states, dataset):
@@ -111,13 +134,15 @@ def main():
         )
         ckpt = ckpts[-1][1]
     logger.info("loading %s", ckpt)
-    model = torch.compile(
-        # pylint: disable=no-value-for-parameter
-        Model.load_from_checkpoint(ckpt),
-        mode="max-autotune",
-    )
+    model = Model.load_from_checkpoint(ckpt)  # pylint: disable=no-value-for-parameter
+    model = torch.compile(model, mode="max-autotune")
     model.eval()
-    # model.model.setup_caches(1, torch.float16)
+    # TODO: kv cache makes it slower...
+    # with device:
+    #    model.model.setup_caches(
+    #        1,
+    #        torch.float32,
+    #    )
 
     if args.start_n is None:
         start = random.randint(0, dataset.n_words)

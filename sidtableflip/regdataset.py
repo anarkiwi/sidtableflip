@@ -259,6 +259,7 @@ class RegDataset(torch.utils.data.Dataset):
         tokens = pd.concat(dfs).drop_duplicates().sort_values(TOKEN_KEYS)
         tokens.reset_index(drop=True, inplace=True)
         tokens["n"] = tokens.index
+        tokens["n"] = tokens["n"] + 1
         tokens = tokens.sort_values(["n"])
         return tokens
 
