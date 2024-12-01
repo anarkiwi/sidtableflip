@@ -29,8 +29,9 @@ class Predictor:
                 v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
                 logits[logits < v[:, [-1]]] = -float("Inf")
             probs = torch.nn.functional.softmax(logits, dim=-1)
+            next_state = torch.multinomial(probs, num_samples=1)[0][0]
             self.prompt = torch.roll(self.prompt, -1)
-            self.prompt[0][-1] = torch.multinomial(probs, num_samples=1)
+            self.prompt[0][-1] = next_state
 
         return self.prompt.detach().squeeze(0)
 
@@ -43,7 +44,7 @@ def generate_sequence(logger, dataset, model, device, prompt, prompt_from, args)
     states = []
     cycles = 0
     prompt_cycles = 0
-    from_offset = args.sequence_length
+    from_offset = 0
     predictor = torch.compile(Predictor)(args, model, device, prompt)
 
     if args.include_prompt:
@@ -55,8 +56,8 @@ def generate_sequence(logger, dataset, model, device, prompt, prompt_from, args)
         )
 
     while cycles < args.output_cycles:
-        new_states = predictor.predict()
         prompt_compare = prompt_from[from_offset:][: args.sequence_length]
+        new_states = predictor.predict()
         states.extend(new_states.tolist())
         df = state_df(states, dataset)
         cycles = df["diff"].sum() - prompt_cycles
@@ -72,7 +73,7 @@ def generate_sequence(logger, dataset, model, device, prompt, prompt_from, args)
                 dataset.n_vocab,
                 validate_args=False,
             )
-            acc = "%2.2f" % acc
+            acc = "%3.3f" % acc
         logger.info(
             "generated %9.u cycles %6.2f seconds accuracy %s %6.2f%%",
             cycles,
@@ -124,7 +125,7 @@ def main():
         start = args.start_n
     logger.info("starting at %u / %u", start, dataset.n_words)
     prompt = dataset.dfs_n[start:][: args.sequence_length].unsqueeze(0).to(device)
-    prompt_from = dataset.dfs_n[start + 1 :].to(device)
+    prompt_from = dataset.dfs_n[start + args.sequence_length :].to(device)
     generate_sequence(logger, dataset, model, device, prompt, prompt_from, args)
 
 
