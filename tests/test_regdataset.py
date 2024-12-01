@@ -30,8 +30,8 @@ class TestRegDatasetLoader(unittest.TestCase):
         )
         tokens_df = pd.DataFrame(
             [
-                {"reg": 1, "val": 1, "diff": 1, "n": 0},
-                {"reg": 1, "val": 2, "diff": 1, "n": 1},
+                {"reg": 1, "val": 1, "diff": 1, "n": 1},
+                {"reg": 1, "val": 2, "diff": 1, "n": 2},
             ]
         )
         self.assertTrue(tokens_df.equals(loader._make_tokens([test_df])))
