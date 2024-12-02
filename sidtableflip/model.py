@@ -139,20 +139,8 @@ class Model(LightningModule):
             self.parameters(),
             lr=self.args.learning_rate,
             foreach=True,
+            weight_decay=0.1,
         )
-        # self.optimizer = torch.optim.AdamW(
-        #    self.parameters(),
-        #    lr=self.args.learning_rate,
-        #    fused=True,
-        #    # weight_decay=1e-1,
-        # )
-        # self.optimizer = bnb.optim.AdamW(
-        #    self.parameters(),
-        #    lr=self.args.learning_rate,
-        # )
-        # self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
-        #    self.optimizer, gamma=0.5
-        # )
 
     @torch.compiler.disable
     def log_nocompile(self, loss, acc):
@@ -175,7 +163,6 @@ class Model(LightningModule):
         return loss
 
     def configure_optimizers(self):
-        # return [self.optimizer], [self.scheduler]
         return self.optimizer
 
     def set_optimizer_state(self, state):

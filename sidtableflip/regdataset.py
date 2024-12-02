@@ -255,14 +255,6 @@ class RegDataset(torch.utils.data.Dataset):
             dfs.append(df)
         return pd.concat(dfs).reset_index(drop=True)
 
-    def _make_tokens(self, dfs):
-        tokens = pd.concat(dfs).drop_duplicates().sort_values(TOKEN_KEYS)
-        tokens.reset_index(drop=True, inplace=True)
-        tokens["n"] = tokens.index
-        tokens["n"] = tokens["n"] + 1
-        tokens = tokens.sort_values(["n"])
-        return tokens
-
     def load(self):
         if self.args.reglog:
             self.dfs = [self._downsample_df(self._read_df(self.args.reglog))]
