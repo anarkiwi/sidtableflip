@@ -8,4 +8,4 @@ scipy==1.14.1
 schedulefree==1.4
 tensorboard==2.18.0
 torchtune==0.4.0
-torchao==0.6.1
+torchao==0.7.0
